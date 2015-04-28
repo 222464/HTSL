@@ -62,7 +62,7 @@ void SparseCoder::activate() {
 		float sum = _hidden[hi]._activation;
 
 		for (int hio = 0; hio < _hidden.size(); hio++)
-			sum += _hidden[hi]._hiddenHiddenConnections[hio]._weight * std::max(0.0f, _hidden[hio]._activation - _hidden[hi]._activation);
+			sum += _hidden[hi]._hiddenHiddenConnections[hio]._weight * (_hidden[hio]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
 
 		_hidden[hi]._state = std::max(0.0f, sum);
 	}
@@ -94,7 +94,7 @@ void SparseCoder::learn(float alpha, float beta, float gamma, float sparsity) {
 			_hidden[hi]._visibleHiddenConnections[vi]._weight += beta * bit * visibleErrors[vi];// (_visible[vi]._input - _hidden[hi]._activation * _hidden[hi]._visibleHiddenConnections[vi]._weight);
 
 		for (int hio = 0; hio < _hidden.size(); hio++)
-			_hidden[hi]._hiddenHiddenConnections[hio]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[hio]._weight - alpha * (_hidden[hi]._state * _hidden[hio]._state - sparsity * sparsity));
+			_hidden[hi]._hiddenHiddenConnections[hio]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[hio]._weight - alpha * (_hidden[hi]._state - sparsity) * (_hidden[hio]._activation > _hidden[hi]._activation ? 1.0f : 0.0f));
 
 		_hidden[hi]._hiddenHiddenConnections[hi]._weight = 0.0f;
 
@@ -102,12 +102,12 @@ void SparseCoder::learn(float alpha, float beta, float gamma, float sparsity) {
 	}
 
 	// Average out inhibitory weights (make weights symmetrical)
-	for (int hi = 0; hi < _hidden.size(); hi++) {
+	/*for (int hi = 0; hi < _hidden.size(); hi++) {
 		for (int hio = 0; hio < _hidden.size(); hio++) {
 			float average = 0.5f * (_hidden[hi]._hiddenHiddenConnections[hio]._weight + _hidden[hio]._hiddenHiddenConnections[hi]._weight);
 
 			_hidden[hi]._hiddenHiddenConnections[hio]._weight = average;
 			_hidden[hio]._hiddenHiddenConnections[hi]._weight = average;
 		}
-	}
+	}*/
 }
