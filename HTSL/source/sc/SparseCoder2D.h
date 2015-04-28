@@ -43,11 +43,10 @@ namespace sc {
 			float _bias;
 
 			float _state;
-			float _statePrev;
 			float _activation;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _activation(0.0f)
+				: _state(0.0f), _activation(0.0f)
 			{}
 		};
 
@@ -69,19 +68,34 @@ namespace sc {
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, float minWeight, float maxWeight, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, std::mt19937 &generator);
 
-		void activate(float activationLeak, float sparsity);
+		void activate();
 		void reconstruct();
 		void learn(float alpha, float beta, float gamma, float sparsity);
-		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;
 		}
 
+		void setVisibleInput(int x, int y, float value) {
+			_visible[x + y * _visibleWidth]._input = value;
+		}
+
+		float getVisibleRecon(int index) const {
+			return _visible[index]._reconstruction;
+		}
+
+		float getVisibleRecon(int x, int y) const {
+			return _visible[x + y * _visibleWidth]._reconstruction;
+		}
+
 		float getHiddenState(int index) const {
 			return _hidden[index]._state;
+		}
+
+		float getHiddenState(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._state;
 		}
 
 		int getNumVisible() const {
@@ -92,8 +106,38 @@ namespace sc {
 			return _hidden.size();
 		}
 
-		float getVHWeight(int hi, int vi) const {
-			return _hidden[hi]._visibleHiddenConnections[vi]._weight;
+		int getVisibleWidth() const {
+			return _visibleWidth;
 		}
+
+		int getVisibleHeight() const {
+			return _visibleHeight;
+		}
+
+		int getHiddenWidth() const {
+			return _hiddenWidth;
+		}
+
+		int getHiddenHeight() const {
+			return _hiddenHeight;
+		}
+
+		int getReceptiveRadius() const {
+			return _receptiveRadius;
+		}
+
+		int getInhbitionRadius() const {
+			return _inhibitionRadius;
+		}
+
+		float getVHWeight(int hi, int ci) const {
+			return _hidden[hi]._visibleHiddenConnections[ci]._weight;
+		}
+
+		float getVHWeight(int hx, int hy, int ci) const {
+			return _hidden[hx + hy * _hiddenWidth]._visibleHiddenConnections[ci]._weight;
+		}
+
+		void getVHWeights(int hx, int hy, std::vector<float> &rectangle) const;
 	};
 }

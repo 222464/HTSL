@@ -1,29 +1,29 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-#include "sc/SparseCoder.h"
+#include "sc/SparseCoder2D.h"
 
 int main() {
 	std::mt19937 generator(time(nullptr));
 
 	// ---------------------------- Simulation Parameters ----------------------------
 
-	const int sampleWidth = 14;
-	const int sampleHeight = 14;
-	const int codeWidth = 28;
-	const int codeHeight = 28;
+	const int sampleWidth = 32;
+	const int sampleHeight = 32;
+	const int codeWidth = 32;
+	const int codeHeight = 32;
 	const float learnAlpha = 0.008f;
 	const float learnBeta = 0.005f;
 	const float learnGamma = 0.008f;
-	const float sparsity = 0.001f;
+	const float sparsity = 0.01f;
 
 	const int stepsPerFrame = 4;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
-	sc::SparseCoder sparseCoder;
+	sc::SparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth * sampleHeight, codeWidth * codeHeight, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 5, 5, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -84,7 +84,7 @@ int main() {
 					int tx = sampleX + x;
 					int ty = sampleY + y;
 
-					sparseCoder.setVisibleInput(inputIndex++, sampleImage.getPixel(tx, ty).r / 255.0f);
+					sparseCoder.setVisibleInput(x, y, sampleImage.getPixel(tx, ty).r / 255.0f);
 				}
 
 			sparseCoder.activate();
@@ -108,7 +108,7 @@ int main() {
 							int tx = wx + x;
 							int ty = wy + y;
 
-							sparseCoder.setVisibleInput(inputIndex++, sampleImage.getPixel(tx, ty).r / 255.0f);
+							sparseCoder.setVisibleInput(x, y, sampleImage.getPixel(tx, ty).r / 255.0f);
 						}
 
 					sparseCoder.activate();
@@ -122,7 +122,7 @@ int main() {
 							int tx = wx + x;
 							int ty = wy + y;
 
-							recon[tx + ty * sampleImage.getSize().x] += sparseCoder.getVisibleRecon(inputIndex++);
+							recon[tx + ty * sampleImage.getSize().x] += sparseCoder.getVisibleRecon(x, y);
 							sums[tx + ty * sampleImage.getSize().x] += 1.0f;
 						}
 				}
@@ -160,30 +160,37 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				for (int x = 0; x < sampleWidth; x++)
-					for (int y = 0; y < sampleHeight; y++) {
-						float w = sparseCoder.getVHWeight(sx + sy * codeWidth, x + y * sampleWidth);
+				std::vector<float> rectangle;
+				sparseCoder.getVHWeights(sx, sy, rectangle);
 
-						minWeight = std::min(minWeight, w);
-						maxWeight = std::max(maxWeight, w);
-					}
+				for (int ri = 0; ri < rectangle.size(); ri++) {
+					float w = rectangle[ri];
+
+					minWeight = std::min(minWeight, w);
+					maxWeight = std::max(maxWeight, w);
+				}
 			}
 
+		int dim = 2 * sparseCoder.getReceptiveRadius() + 1;
+
 		sf::Image receptiveFieldsImage;
-		receptiveFieldsImage.create(codeWidth * sampleWidth, codeHeight * sampleHeight);
+		receptiveFieldsImage.create(codeWidth * dim, codeHeight * dim);
 
 		float scalar = 1.0f / (maxWeight - minWeight);
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				for (int x = 0; x < sampleWidth; x++)
-					for (int y = 0; y < sampleHeight; y++) {
+				std::vector<float> rectangle;
+				sparseCoder.getVHWeights(sx, sy, rectangle);
+
+				for (int x = 0; x < (2 * sparseCoder.getReceptiveRadius() + 1); x++)
+					for (int y = 0; y < (2 * sparseCoder.getReceptiveRadius() + 1); y++) {
 						sf::Color color;
 
-						color.r = color.b = color.g = 255 * scalar * (sparseCoder.getVHWeight(sx + sy * codeWidth, x + y * sampleWidth) - minWeight);
+						color.r = color.b = color.g = 255 * scalar * (rectangle[x + dim * y] - minWeight);
 						color.a = 255;
 
-						receptiveFieldsImage.setPixel(sx * sampleWidth + x, sy * sampleHeight + y, color);
+						receptiveFieldsImage.setPixel(sx * dim + x, sy * dim + y, color);
 					}
 			}
 
@@ -204,12 +211,12 @@ int main() {
 				if (sparseCoder.getHiddenState(sx + sy * codeWidth) > 0.0f) {
 					sf::RectangleShape rs;
 
-					rs.setPosition(sx * sampleWidth * scale, sy * sampleHeight * scale);
+					rs.setPosition(sx * dim * scale, sy * dim * scale);
 					rs.setOutlineColor(sf::Color::Red);
 					rs.setFillColor(sf::Color::Transparent);
 					rs.setOutlineThickness(2.0f);
 
-					rs.setSize(sf::Vector2f(sampleWidth * scale, sampleHeight * scale));
+					rs.setSize(sf::Vector2f(dim * scale, dim * scale));
 
 					renderWindow.draw(rs);
 				}
