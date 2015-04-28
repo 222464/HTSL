@@ -25,9 +25,11 @@ misrepresented as being the original software.
 #include <random>
 
 namespace sc {
-	class SparseCoder {
+	class SparseCoder2D {
 	private:
 		struct Connection {
+			unsigned short _index;
+
 			float _weight;
 
 			Connection()
@@ -38,13 +40,14 @@ namespace sc {
 			std::vector<Connection> _visibleHiddenConnections;
 			std::vector<Connection> _hiddenHiddenConnections;
 
-			Connection _bias;
+			float _bias;
 
 			float _state;
+			float _statePrev;
 			float _activation;
 
 			HiddenNode()
-				: _state(0.0f), _activation(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _activation(0.0f)
 			{}
 		};
 
@@ -57,26 +60,24 @@ namespace sc {
 			{}
 		};
 
+		int _visibleWidth, _visibleHeight;
+		int _hiddenWidth, _hiddenHeight;
+		float _receptiveRadius;
+		float _inhibitionRadius;
+
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
-		float sigmoid(float x) {
-			return 1.0f / (1.0f + std::exp(-x));
-		}
-
 	public:
-		void createRandom(int numVisible, int numHidden, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, float minWeight, float maxWeight, std::mt19937 &generator);
 
-		void activate();
+		void activate(float activationLeak, float sparsity);
 		void reconstruct();
 		void learn(float alpha, float beta, float gamma, float sparsity);
+		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;
-		}
-
-		float getVisibleRecon(int index) const {
-			return _visible[index]._reconstruction;
 		}
 
 		float getHiddenState(int index) const {
