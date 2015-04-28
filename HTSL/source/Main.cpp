@@ -8,14 +8,14 @@ int main() {
 
 	// ---------------------------- Simulation Parameters ----------------------------
 
-	const int sampleWidth = 16;
-	const int sampleHeight = 16;
-	const int codeWidth = 16;
-	const int codeHeight = 16;
-	const float learnAlpha = 0.005f;
-	const float learnBeta = 0.002f;
-	const float learnGamma = 0.005f;
-	const float sparsity = 0.02f;
+	const int sampleWidth = 14;
+	const int sampleHeight = 14;
+	const int codeWidth = 28;
+	const int codeHeight = 28;
+	const float learnAlpha = 0.008f;
+	const float learnBeta = 0.005f;
+	const float learnGamma = 0.008f;
+	const float sparsity = 0.001f;
 
 	const int stepsPerFrame = 4;
 

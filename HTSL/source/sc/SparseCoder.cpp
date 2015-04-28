@@ -94,11 +94,11 @@ void SparseCoder::learn(float alpha, float beta, float gamma, float sparsity) {
 			_hidden[hi]._visibleHiddenConnections[vi]._weight += beta * bit * visibleErrors[vi];// (_visible[vi]._input - _hidden[hi]._activation * _hidden[hi]._visibleHiddenConnections[vi]._weight);
 
 		for (int hio = 0; hio < _hidden.size(); hio++)
-			_hidden[hi]._hiddenHiddenConnections[hio]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[hio]._weight - alpha * (_hidden[hi]._state - sparsity) * (_hidden[hio]._activation > _hidden[hi]._activation ? 1.0f : 0.0f));
+			_hidden[hi]._hiddenHiddenConnections[hio]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[hio]._weight - alpha * (bit - sparsity) * (_hidden[hio]._activation > _hidden[hi]._activation ? 1.0f : 0.0f));
 
 		_hidden[hi]._hiddenHiddenConnections[hi]._weight = 0.0f;
 
-		_hidden[hi]._bias._weight += gamma * (_hidden[hi]._state - sparsity);
+		_hidden[hi]._bias._weight += gamma * (bit - sparsity);
 	}
 
 	// Average out inhibitory weights (make weights symmetrical)
