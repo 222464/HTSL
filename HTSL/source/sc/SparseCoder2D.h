@@ -27,26 +27,49 @@ misrepresented as being the original software.
 namespace sc {
 	class SparseCoder2D {
 	private:
-		struct Connection {
+		struct VisibleConnection {
 			unsigned short _index;
 
 			float _weight;
 
-			Connection()
+			float _falloff;
+
+			VisibleConnection()
+			{}
+		};
+
+		struct HiddenConnection {
+			unsigned short _index;
+
+			float _weight;
+
+			float _falloff;
+
+			HiddenConnection()
+			{}
+		};
+
+		struct ReconstructionConnection {
+			unsigned short _index;
+			
+			float _weight;
+
+			ReconstructionConnection()
 			{}
 		};
 
 		struct HiddenNode {
-			std::vector<Connection> _visibleHiddenConnections;
-			std::vector<Connection> _hiddenHiddenConnections;
+			std::vector<VisibleConnection> _visibleHiddenConnections;
+			std::vector<HiddenConnection> _hiddenHiddenConnections;
 
 			float _bias;
 
 			float _state;
+			float _statePrev;
 			float _activation;
 
 			HiddenNode()
-				: _state(0.0f), _activation(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _activation(0.0f)
 			{}
 		};
 
@@ -61,18 +84,20 @@ namespace sc {
 
 		int _visibleWidth, _visibleHeight;
 		int _hiddenWidth, _hiddenHeight;
-		float _receptiveRadius;
-		float _inhibitionRadius;
+		int _receptiveRadius;
+		int _inhibitionRadius;
+		int _reconstructionRadius;
 
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int reconstructionRadius, std::mt19937 &generator);
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float beta, float gamma, float sparsity);
+		void learn(float alpha, float beta, float gamma, float delta, float decay, float sparsity);
+		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;

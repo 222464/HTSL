@@ -12,18 +12,20 @@ int main() {
 	const int sampleHeight = 32;
 	const int codeWidth = 32;
 	const int codeHeight = 32;
-	const float learnAlpha = 0.008f;
+	const float learnAlpha = 0.05f;
 	const float learnBeta = 0.005f;
-	const float learnGamma = 0.008f;
+	const float learnGamma = 0.05f;
+	const float learnDelta = 10.0f;
+	const float decay = 0.005f;
 	const float sparsity = 0.01f;
 
-	const int stepsPerFrame = 4;
+	const int stepsPerFrame = 8;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
 	sc::SparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 5, 5, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 5, 10, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -91,7 +93,9 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(learnAlpha, learnBeta, learnGamma, sparsity);
+			sparseCoder.learn(learnAlpha, learnBeta, learnGamma, learnDelta, decay, sparsity);
+
+			sparseCoder.stepEnd();
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {

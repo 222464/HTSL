@@ -2,9 +2,17 @@
 
 #include <algorithm>
 
+#include <assert.h>
+
+#include <iostream>
+
 using namespace sc;
 
-void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, std::mt19937 &generator) {
+float sigmoid(float x) {
+	return 1.0f / (1.0f + std::exp(-x));
+}
+
+void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int reconstructionRadius, std::mt19937 &generator) {
 	std::uniform_real_distribution<float> weightDist(0.0f, 1.0f);
 
 	_visibleWidth = visibleWidth;
@@ -14,11 +22,13 @@ void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hidden
 
 	_receptiveRadius = receptiveRadius;
 	_inhibitionRadius = inhibitionRadius;
+	_reconstructionRadius = reconstructionRadius;
 
 	int numVisible = visibleWidth * visibleHeight;
 	int numHidden = hiddenWidth * hiddenHeight;
 	int receptiveSize = std::pow(receptiveRadius * 2 + 1, 2);
 	int inhibitionSize = std::pow(inhibitionRadius * 2 + 1, 2);
+	int reconstructionSize = std::pow(reconstructionRadius * 2 + 1, 2);
 
 	_visible.resize(numVisible);
 
@@ -27,12 +37,15 @@ void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hidden
 	float hiddenToVisibleWidth = static_cast<float>(visibleWidth) / static_cast<float>(hiddenWidth);
 	float hiddenToVisibleHeight = static_cast<float>(visibleHeight) / static_cast<float>(hiddenHeight);
 
+	float visibleToHiddenWidth = static_cast<float>(hiddenWidth) / static_cast<float>(visibleWidth);
+	float visibleToHiddenHeight = static_cast<float>(hiddenHeight) / static_cast<float>(visibleHeight);
+
 	for (int hi = 0; hi < numHidden; hi++) {
 		int hx = hi % hiddenWidth;
 		int hy = hi / hiddenWidth;
 
 		int centerX = std::round(hx * hiddenToVisibleWidth);
-		int centerY = std::round(hy * hiddenToVisibleWidth);
+		int centerY = std::round(hy * hiddenToVisibleHeight);
 
 		_hidden[hi]._bias = 0.0f;
 
@@ -48,10 +61,11 @@ void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hidden
 				if (vx >= 0 && vx < visibleWidth && vy >= 0 && vy < visibleHeight) {
 					int vi = vx + vy * visibleWidth;
 
-					Connection c;
+					VisibleConnection c;
 
 					c._weight = weightDist(generator);
 					c._index = vi;
+					c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(receptiveRadius + 1));
 
 					dist2 += c._weight * c._weight;
 
@@ -78,10 +92,11 @@ void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hidden
 				if (hox >= 0 && hox < hiddenWidth && hoy >= 0 && hoy < hiddenWidth) {
 					int hio = hox + hoy * hiddenWidth;
 
-					Connection c;
+					HiddenConnection c;
 
 					c._weight = weightDist(generator);
 					c._index = hio;
+					c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(inhibitionRadius + 1));
 
 					dist2 += c._weight * c._weight;
 
@@ -94,6 +109,44 @@ void SparseCoder2D::createRandom(int visibleWidth, int visibleHeight, int hidden
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
 			_hidden[hi]._hiddenHiddenConnections[ci]._weight *= normFactor;
 	}
+
+	/*for (int vi = 0; vi < numVisible; vi++) {
+		int vx = vi % visibleWidth;
+		int vy = vi / visibleWidth;
+
+		int centerX = std::round(vx * visibleToHiddenWidth);
+		int centerY = std::round(vy * visibleToHiddenHeight);
+
+		_visible[vi]._reconstructionConnections.reserve(reconstructionSize);
+
+		float dist2 = 0.0f;
+
+		for (int dx = -reconstructionRadius; dx <= reconstructionRadius; dx++)
+			for (int dy = -reconstructionRadius; dy <= reconstructionRadius; dy++) {
+				int hx = centerX + dx;
+				int hy = centerY + dy;
+
+				if (hx >= 0 && hx < hiddenWidth && hy >= 0 && hy < hiddenHeight) {
+					int hi = hx + hy * hiddenWidth;
+
+					ReconstructionConnection c;
+
+					c._weight = weightDist(generator);
+					c._index = hi;
+
+					dist2 += c._weight * c._weight;
+
+					_visible[vi]._reconstructionConnections.push_back(c);
+				}
+			}
+
+		_visible[vi]._reconstructionConnections.shrink_to_fit();
+
+		float normFactor = 1.0f / dist2;
+
+		for (int ci = 0; ci < _visible[vi]._reconstructionConnections.size(); ci++)
+			_visible[vi]._reconstructionConnections[ci]._weight *= normFactor;
+	}*/
 }
 
 void SparseCoder2D::activate() {
@@ -102,9 +155,9 @@ void SparseCoder2D::activate() {
 		float sum = -_hidden[hi]._bias;
 
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-			sum += _hidden[hi]._visibleHiddenConnections[ci]._weight * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input;
+			sum += _hidden[hi]._visibleHiddenConnections[ci]._weight *  _hidden[hi]._visibleHiddenConnections[ci]._falloff * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input;
 
-		_hidden[hi]._activation = sum;
+		_hidden[hi]._activation = std::max(0.0f, sum);
 	}
 
 	// Inhibit
@@ -112,9 +165,9 @@ void SparseCoder2D::activate() {
 		float sum = _hidden[hi]._activation;
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			sum += _hidden[hi]._hiddenHiddenConnections[ci]._weight * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
+			sum += _hidden[hi]._hiddenHiddenConnections[ci]._weight * _hidden[hi]._hiddenHiddenConnections[ci]._falloff * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
 
-		_hidden[hi]._state = std::max(0.0f, sum);
+		_hidden[hi]._state = sum > 0.0f ? 1.0f : 0.0f;// std::max(0.0f, sum);
 	}
 }
 
@@ -128,7 +181,7 @@ void SparseCoder2D::reconstruct() {
 	}
 }
 
-void SparseCoder2D::learn(float alpha, float beta, float gamma, float sparsity) {
+void SparseCoder2D::learn(float alpha, float beta, float gamma, float delta, float decay, float sparsity) {
 	std::vector<float> visibleErrors(_visible.size());
 
 	for (int vi = 0; vi < _visible.size(); vi++)
@@ -138,15 +191,16 @@ void SparseCoder2D::learn(float alpha, float beta, float gamma, float sparsity) 
 
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		float bit = _hidden[hi]._state > 0.0f ? 1.0f : 0.0f;
+		float bitPrev = _hidden[hi]._statePrev > 0.0f ? 1.0f : 0.0f;
 
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-			_hidden[hi]._visibleHiddenConnections[ci]._weight += beta * bit * visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index];// (_visible[vi]._input - _hidden[hi]._activation * _hidden[hi]._visibleHiddenConnections[vi]._weight);
+			_hidden[hi]._visibleHiddenConnections[ci]._weight += beta * bit * (visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] + delta * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input);
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++) {
 			if (_hidden[hi]._hiddenHiddenConnections[ci]._index == hi)
 				_hidden[hi]._hiddenHiddenConnections[ci]._weight = 0.0f;
 			else
-				_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * (bit - sparsity) * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f));
+				_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * ((_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._state > 0.0f ? 1.0f : 0.0f) * bit - sparsitySquared));
 		}
 
 		_hidden[hi]._bias += gamma * (bit - sparsity);
@@ -180,4 +234,9 @@ void SparseCoder2D::getVHWeights(int hx, int hy, std::vector<float> &rectangle) 
 
 		rectangle[rx + ry * dim] = _hidden[hi]._visibleHiddenConnections[ci]._weight;
 	}
+}
+
+void SparseCoder2D::stepEnd() {
+	for (int hi = 0; hi < _hidden.size(); hi++)
+		_hidden[hi]._statePrev = _hidden[hi]._state;
 }
