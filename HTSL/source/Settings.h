@@ -1,0 +1,7 @@
+#pragma once
+
+#define REINFORCEMENT_LEARNING 0
+#define SPARSE_CODING 1
+
+// Choose program
+#define SUBPROGRAM_EXECUTE REINFORCEMENT_LEARNING

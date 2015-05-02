@@ -1,3 +1,7 @@
+#include <Settings.h>
+
+#if SUBPROGRAM_EXECUTE == SPARSE_CODING
+
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -15,7 +19,7 @@ int main() {
 	const float learnAlpha = 0.05f;
 	const float learnBeta = 0.005f;
 	const float learnGamma = 0.05f;
-	const float learnDelta = 10.0f;
+	const float learnDelta = 40.0f;
 	const float decay = 0.005f;
 	const float sparsity = 0.01f;
 
@@ -25,7 +29,7 @@ int main() {
 
 	sc::SparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 5, 10, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 10, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -245,3 +249,5 @@ int main() {
 	
 	return 0;
 }
+
+#endif
