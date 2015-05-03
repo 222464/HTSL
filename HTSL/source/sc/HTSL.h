@@ -18,19 +18,21 @@ namespace sc {
 			float _sparsity;
 
 			float _rscAlpha;
-			float _rscBeta;
+			float _rscBetaVisible;
+			float _rscBetaHidden;
 			float _rscGamma;
-			float _rscDelta;
+			float _rscDeltaVisible;
+			float _rscDeltaHidden;
 
 			float _predictionAlpha;
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(4), _inhibitionRadius(4), _recurrentRadius(4),
-				_feedbackRadius(4), _lateralRadius(4),
-				_sparsity(0.02f), 
-				_rscAlpha(0.05f), _rscBeta(0.001f), _rscGamma(0.05f), _rscDelta(10.0f),
-				_predictionAlpha(0.4f)
+				_receptiveRadius(8), _inhibitionRadius(6), _recurrentRadius(8),
+				_feedbackRadius(8), _lateralRadius(8),
+				_sparsity(3.0f / 121.0f), 
+				_rscAlpha(0.02f), _rscBetaVisible(0.002f), _rscBetaHidden(0.002f), _rscGamma(0.02f), _rscDeltaVisible(4.0f), _rscDeltaHidden(4.0f),
+				_predictionAlpha(0.7f)
 			{}
 		};
 

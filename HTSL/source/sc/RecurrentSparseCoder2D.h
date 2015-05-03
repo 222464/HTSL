@@ -98,7 +98,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float beta, float gamma, float delta, float sparsity);
+		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {

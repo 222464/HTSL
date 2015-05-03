@@ -153,7 +153,7 @@ void HTSL::update() {
 
 void HTSL::learnRSC() {
 	for (int l = 0; l < _layers.size(); l++)
-		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBeta, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDelta, _layerDescs[l]._sparsity);
+		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._sparsity);
 }
 
 void HTSL::learnPrediction() {

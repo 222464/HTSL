@@ -147,7 +147,7 @@ void RecurrentSparseCoder2D::activate() {
 		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
 			sum += _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight *  _hidden[hi]._hiddenPrevHiddenConnections[ci]._falloff * _hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev;
 
-		_hidden[hi]._activation = std::max(0.0f, sum);
+		_hidden[hi]._activation = sum;// std::max(0.0f, sum);
 	}
 
 	// Inhibit
@@ -177,7 +177,7 @@ void RecurrentSparseCoder2D::reconstruct() {
 	}
 }
 
-void RecurrentSparseCoder2D::learn(float alpha, float beta, float gamma, float delta, float sparsity) {
+void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity) {
 	std::vector<float> visibleErrors(_visible.size());
 	std::vector<float> hiddenErrors(_hidden.size());
 
@@ -194,10 +194,10 @@ void RecurrentSparseCoder2D::learn(float alpha, float beta, float gamma, float d
 		float bitPrev = _hidden[hi]._statePrev > 0.0f ? 1.0f : 0.0f;
 
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-			_hidden[hi]._visibleHiddenConnections[ci]._weight += beta * bit * (visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] + delta * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input);
+			_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * bit * (visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] + deltaVisible * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input);
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += beta * bit * (hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] + delta * _hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev);
+			_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * bit * (hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] + deltaHidden * _hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev);
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++) {
 			if (_hidden[hi]._hiddenHiddenConnections[ci]._index == hi)
