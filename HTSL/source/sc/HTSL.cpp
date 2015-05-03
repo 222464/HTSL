@@ -162,29 +162,33 @@ void HTSL::learnPrediction() {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._state);
+				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._statePrev);
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
 			}
 		}
 		else {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._state);
+				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._statePrev);
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
-					node._feedbackConnections[ci]._weight += nodeError * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
+					node._feedbackConnections[ci]._weight += nodeError * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._statePrev;
 			}
 		}
 	}
 }
 
 void HTSL::stepEnd() {
-	for (int l = 0; l < _layers.size(); l++)
+	for (int l = 0; l < _layers.size(); l++) {
 		_layers[l]._rsc.stepEnd();
+
+		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++)
+			_layers[l]._predictionNodes[ni]._statePrev = _layers[l]._predictionNodes[ni]._state;
+	}
 }

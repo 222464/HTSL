@@ -46,9 +46,10 @@ namespace sc {
 			std::vector<PredictionConnection> _lateralConnections;
 
 			float _state;
+			float _statePrev;
 
 			PredictionNode()
-				: _state(0.0f)
+				: _state(0.0f), _statePrev(0.0f)
 			{}
 		};
 

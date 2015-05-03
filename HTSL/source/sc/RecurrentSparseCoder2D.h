@@ -133,6 +133,14 @@ namespace sc {
 			return _hidden[x + y * _hiddenWidth]._state;
 		}
 
+		float getHiddenStatePrev(int index) const {
+			return _hidden[index]._statePrev;
+		}
+
+		float getHiddenStatePrev(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._statePrev;
+		}
+
 		int getNumVisible() const {
 			return _visible.size();
 		}
