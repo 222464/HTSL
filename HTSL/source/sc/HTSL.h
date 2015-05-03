@@ -69,6 +69,8 @@ namespace sc {
 		std::vector<LayerDesc> _layerDescs;
 		std::vector<Layer> _layers;
 
+		int _inputWidth, _inputHeight;
+
 	public:
 		void createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, std::mt19937 &generator);
 
@@ -85,7 +87,7 @@ namespace sc {
 		}
 
 		float getPrediction(int x, int y) const {
-			return _layers.front()._predictionNodes[x + y * _layerDescs.front()._width]._state;
+			return _layers.front()._predictionNodes[x + y * _inputWidth]._state;
 		}
 
 		void update();

@@ -5,6 +5,9 @@
 using namespace sc;
 
 void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, std::mt19937 &generator) {
+	_inputWidth = inputWidth;
+	_inputHeight = inputHeight;
+
 	_layerDescs = layerDescs;
 
 	_layers.resize(layerDescs.size());
