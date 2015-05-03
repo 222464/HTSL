@@ -7,7 +7,7 @@ namespace ex {
 	public:
 		const float _pixelsPerMeter = 128.0f;
 		const float _poleLength = 1.0f;
-		const float _g = -2.8f;
+		const float _g = -9.8f;
 		const float _massMass = 20.0f;
 		const float _cartMass = 2.0f;
 		const float _poleRotationalFriction = 0.008f;

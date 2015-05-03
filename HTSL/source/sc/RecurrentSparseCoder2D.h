@@ -25,7 +25,7 @@ misrepresented as being the original software.
 #include <random>
 
 namespace sc {
-	class SparseCoder2D {
+	class RecurrentSparseCoder2D {
 	private:
 		struct VisibleConnection {
 			unsigned short _index;
@@ -51,7 +51,7 @@ namespace sc {
 
 		struct ReconstructionConnection {
 			unsigned short _index;
-			
+
 			float _weight;
 
 			ReconstructionConnection()
@@ -60,6 +60,7 @@ namespace sc {
 
 		struct HiddenNode {
 			std::vector<VisibleConnection> _visibleHiddenConnections;
+			std::vector<VisibleConnection> _hiddenPrevHiddenConnections;
 			std::vector<HiddenConnection> _hiddenHiddenConnections;
 
 			float _bias;
@@ -67,9 +68,10 @@ namespace sc {
 			float _state;
 			float _statePrev;
 			float _activation;
+			float _reconstruction; // From recurrent connections
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _activation(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _activation(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
@@ -86,12 +88,13 @@ namespace sc {
 		int _hiddenWidth, _hiddenHeight;
 		int _receptiveRadius;
 		int _inhibitionRadius;
+		int _recurrentRadius;
 
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, std::mt19937 &generator);
 
 		void activate();
 		void reconstruct();
