@@ -98,7 +98,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float beta, float gamma, float delta, float decay, float sparsity);
+		void learn(float alpha, float beta, float gamma, float delta, float sparsity);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
@@ -115,6 +115,14 @@ namespace sc {
 
 		float getVisibleRecon(int x, int y) const {
 			return _visible[x + y * _visibleWidth]._reconstruction;
+		}
+
+		float getVisibleState(int index) const {
+			return _visible[index]._input;
+		}
+
+		float getVisibleState(int x, int y) const {
+			return _visible[x + y * _visibleWidth]._input;
 		}
 
 		float getHiddenState(int index) const {

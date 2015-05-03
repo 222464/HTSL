@@ -177,7 +177,7 @@ void RecurrentSparseCoder2D::reconstruct() {
 	}
 }
 
-void RecurrentSparseCoder2D::learn(float alpha, float beta, float gamma, float delta, float decay, float sparsity) {
+void RecurrentSparseCoder2D::learn(float alpha, float beta, float gamma, float delta, float sparsity) {
 	std::vector<float> visibleErrors(_visible.size());
 	std::vector<float> hiddenErrors(_hidden.size());
 

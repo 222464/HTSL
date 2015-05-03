@@ -5,9 +5,6 @@
 using namespace sc;
 
 void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, std::mt19937 &generator) {
-	_inputWidth = inputWidth;
-	_inputHeight = inputHeight;
-
 	_layerDescs = layerDescs;
 
 	_layers.resize(layerDescs.size());
@@ -106,4 +103,88 @@ void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<Layer
 		prevWidth = _layerDescs[l]._width;
 		prevHeight = _layerDescs[l]._height;
 	}
+}
+
+void HTSL::update() {
+	// Up (feature extraction)
+	for (int l = 0; l < _layers.size(); l++) {
+		if (l != 0) {
+			int prevLayerIndex = l - 1;
+
+			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
+				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
+		}
+
+		_layers[l]._rsc.activate();
+		_layers[l]._rsc.reconstruct();
+	}
+
+	// Down (predictions)
+	for (int l = _layers.size() - 1; l >= 0; l--) {
+		if (l == _layers.size() - 1) {
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+				
+				float sum = 0.0f;
+
+				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+					sum += node._lateralConnections[ci]._weight * node._lateralConnections[ci]._falloff * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+			
+				node._state = sum;
+			}
+		}
+		else {
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float sum = 0.0f;
+
+				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+					sum += node._lateralConnections[ci]._weight * node._lateralConnections[ci]._falloff * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+
+				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
+					sum += node._feedbackConnections[ci]._weight * node._feedbackConnections[ci]._falloff * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
+
+				node._state = sum;
+			}
+		}
+	}
+}
+
+void HTSL::learnRSC() {
+	for (int l = 0; l < _layers.size(); l++)
+		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBeta, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDelta, _layerDescs[l]._sparsity);
+}
+
+void HTSL::learnPrediction() {
+	for (int l = 0; l < _layers.size(); l++) {
+		if (l == _layers.size() - 1) {
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._state);
+
+				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+			}
+		}
+		else {
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._state);
+
+				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+
+				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
+					node._feedbackConnections[ci]._weight += nodeError * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
+			}
+		}
+	}
+}
+
+void HTSL::stepEnd() {
+	for (int l = 0; l < _layers.size(); l++)
+		_layers[l]._rsc.stepEnd();
 }
