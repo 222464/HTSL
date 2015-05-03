@@ -185,7 +185,7 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 		visibleErrors[vi] = _visible[vi]._input - _visible[vi]._reconstruction;
 
 	for (int hi = 0; hi < _hidden.size(); hi++)
-		hiddenErrors[hi] = _hidden[hi]._state - _hidden[hi]._reconstruction;
+		hiddenErrors[hi] = _hidden[hi]._statePrev - _hidden[hi]._reconstruction;
 
 	float sparsitySquared = sparsity * sparsity;
 
