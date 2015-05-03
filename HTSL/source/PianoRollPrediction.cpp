@@ -88,7 +88,7 @@ int main() {
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
 	const int useSequence = 0;
-	const int useLength = 20;
+	const int useLength = 50;
 
 	std::unordered_set<int> usedNotes;
 
@@ -118,19 +118,19 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 12;
-	layerDescs[0]._height = 12;
+	layerDescs[0]._width = 10;
+	layerDescs[0]._height = 10;
 
-	layerDescs[1]._width = 10;
-	layerDescs[1]._height = 10;
+	layerDescs[1]._width = 8;
+	layerDescs[1]._height = 8;
 
-	layerDescs[2]._width = 8;
-	layerDescs[2]._height = 8;
+	layerDescs[2]._width = 6;
+	layerDescs[2]._height = 6;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 100; loop++) {
+	for (int loop = 0; loop < 5000; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
@@ -148,8 +148,27 @@ int main() {
 	}
 
 	// Show results
+	int numCorrect = 0;
+	int numTotal = 0;
+
 	for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 		Frame &frame = train._sequences[useSequence]._frames[f];
+
+		std::unordered_set<int> predictedNotes;
+
+		for (int i = 0; i < squareDim * squareDim; i++)
+			if (htsl.getPrediction(i) > 0.5f)
+				predictedNotes.insert(inputToNote[i]);
+
+		std::unordered_set<int> actualNotes;
+
+		for (int n = 0; n < frame._notes.size(); n++)
+			actualNotes.insert(frame._notes[n]);
+		
+		if (predictedNotes == actualNotes)
+			numCorrect++;
+
+		numTotal++;
 
 		for (int i = 0; i < usedNotes.size(); i++)
 			htsl.setInput(i, 0.0f);
@@ -182,6 +201,8 @@ int main() {
 
 		htsl.stepEnd();
 	}
+
+	std::cout << "Correct: " << (static_cast<float>(numCorrect) / static_cast<float>(numTotal) * 100.0f) << "%" << std::endl;
 
 	return 0;
 }
