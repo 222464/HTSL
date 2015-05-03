@@ -11,6 +11,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include <iostream>
+
 #include <sc/HTSL.h>
 
 struct Frame {
@@ -86,10 +88,11 @@ int main() {
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
 	const int useSequence = 0;
+	const int useLength = 20;
 
 	std::unordered_set<int> usedNotes;
 
-	for (int f = 0; f < train._sequences[useSequence]._frames.size(); f++) {
+	for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 		Frame &frame = train._sequences[useSequence]._frames[f];
 
 		for (int n = 0; n < frame._notes.size(); n++)
@@ -98,11 +101,16 @@ int main() {
 	}
 
 	std::unordered_map<int, int> noteToInput;
+	std::unordered_map<int, int> inputToNote;
 
 	int count = 0;
 
-	for (std::unordered_set<int>::const_iterator cit = usedNotes.begin(); cit != usedNotes.end(); cit++)
-		noteToInput[*cit] = count++;
+	for (std::unordered_set<int>::const_iterator cit = usedNotes.begin(); cit != usedNotes.end(); cit++) {
+		noteToInput[*cit] = count;
+		inputToNote[count] = *cit;
+
+		count++;
+	}
 
 	sc::HTSL htsl;
 
@@ -110,19 +118,20 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 32;
-	layerDescs[0]._height = 32;
+	layerDescs[0]._width = 12;
+	layerDescs[0]._height = 12;
 
-	layerDescs[1]._width = 24;
-	layerDescs[1]._height = 24;
+	layerDescs[1]._width = 10;
+	layerDescs[1]._height = 10;
 
-	layerDescs[2]._width = 16;
-	layerDescs[2]._height = 16;
+	layerDescs[2]._width = 8;
+	layerDescs[2]._height = 8;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
-	for (int loop = 0; loop < 5; loop++) {
-		for (int f = 0; f < train._sequences[useSequence]._frames.size(); f++) {
+	// Train on sequence
+	for (int loop = 0; loop < 100; loop++) {
+		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
 			for (int i = 0; i < usedNotes.size(); i++)
@@ -136,6 +145,42 @@ int main() {
 			htsl.learnPrediction();
 			htsl.stepEnd();
 		}
+	}
+
+	// Show results
+	for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
+		Frame &frame = train._sequences[useSequence]._frames[f];
+
+		for (int i = 0; i < usedNotes.size(); i++)
+			htsl.setInput(i, 0.0f);
+
+		for (int n = 0; n < frame._notes.size(); n++)
+			htsl.setInput(noteToInput[frame._notes[n]], 1.0f);
+
+		htsl.update();
+
+		/*for (int x = 0; x < 12; x++) {
+			for (int y = 0; y < 12; y++) {
+				std::cout << htsl.getLayers().front()._rsc.getHiddenState(x, y) << " ";
+			}
+
+			std::cout << std::endl;
+		}*/
+
+		std::cout << "Actual: ";
+
+		for (int n = 0; n < frame._notes.size(); n++)
+			std::cout << frame._notes[n] << " ";
+
+		std::cout << "Prediction: ";
+
+		for (int i = 0; i < squareDim * squareDim; i++)
+			if (htsl.getPrediction(i) > 0.5f)
+				std::cout << inputToNote[i] << " ";
+
+		std::cout << std::endl;
+
+		htsl.stepEnd();
 	}
 
 	return 0;

@@ -51,7 +51,7 @@ void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<Layer
 
 						c._weight = weightDist(generator);
 						c._index = hi;
-						c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(layerDescs[l]._lateralRadius + 1));
+						c._falloff = 1.0f;// std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(layerDescs[l]._lateralRadius + 1));
 
 						dist2 += c._weight * c._weight;
 
@@ -85,7 +85,7 @@ void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<Layer
 
 							c._weight = weightDist(generator);
 							c._index = voi;
-							c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(layerDescs[l]._feedbackRadius + 1));
+							c._falloff = 1.0f;// std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(layerDescs[l]._feedbackRadius + 1));
 
 							dist2 += c._weight * c._weight;
 
@@ -130,7 +130,7 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._weight * node._lateralConnections[ci]._falloff * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 			
-				node._state = sum;
+				node._state = sigmoid(sum);
 			}
 		}
 		else {
@@ -145,7 +145,7 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._weight * node._feedbackConnections[ci]._falloff * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
 
-				node._state = sum;
+				node._state = sigmoid(sum);
 			}
 		}
 	}
