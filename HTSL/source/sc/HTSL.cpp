@@ -128,7 +128,7 @@ void HTSL::update() {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 				
-				float sum = 0.0f;
+				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._weight * node._lateralConnections[ci]._falloff * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
@@ -140,7 +140,7 @@ void HTSL::update() {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-				float sum = 0.0f;
+				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._weight * node._lateralConnections[ci]._falloff * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
@@ -167,6 +167,8 @@ void HTSL::learnPrediction() {
 
 				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._statePrev);
 
+				node._bias += nodeError;
+
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
 			}
@@ -176,6 +178,8 @@ void HTSL::learnPrediction() {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
 				float nodeError = _layerDescs[l]._predictionAlpha * (_layers[l]._rsc.getVisibleState(ni) - node._statePrev);
+
+				node._bias += nodeError;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					node._lateralConnections[ci]._weight += nodeError * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
