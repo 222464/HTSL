@@ -25,7 +25,7 @@ float ExPoleBalancing::runStep(Agent &agent, float dt) {
 
 	reward = -_cartX * 0.005f;
 
-	float averageDecay = 0.1f;
+	float averageDecay = 0.2f;
 
 	float force = 0.0f;
 

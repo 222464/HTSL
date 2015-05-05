@@ -54,7 +54,7 @@ int main() {
 	float avgReward = 0.0f;
 
 	float minReward = 0.0f;
-	float maxReward = 1.0f;
+	float maxReward = 0.001f;
 
 	// ------------------------------- Simulation Loop -------------------------------
 

@@ -5,7 +5,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-#include "sc/RecurrentSparseCoder2D.h"
+#include "sc/SparseCoder2D.h"
 
 int main() {
 	std::mt19937 generator(time(nullptr));
@@ -16,10 +16,10 @@ int main() {
 	const int sampleHeight = 32;
 	const int codeWidth = 16;
 	const int codeHeight = 16;
-	const float learnAlpha = 0.05f;
-	const float learnBeta = 0.005f;
-	const float learnGamma = 0.05f;
-	const float learnDelta = 40.0f;
+	const float learnAlpha = 0.2f;
+	const float learnBeta = 0.001f;
+	const float learnGamma = 0.2f;
+	const float learnDelta = 2.0f;
 	const float decay = 0.005f;
 	const float sparsity = 0.01f;
 
@@ -27,9 +27,9 @@ int main() {
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
-	sc::RecurrentSparseCoder2D sparseCoder;
+	sc::SparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 10, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 10, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 

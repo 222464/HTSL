@@ -157,7 +157,7 @@ void RecurrentSparseCoder2D::activate() {
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
 			sum += _hidden[hi]._hiddenHiddenConnections[ci]._weight * _hidden[hi]._hiddenHiddenConnections[ci]._falloff * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
 
-		_hidden[hi]._state = sum > 0.0f ? 1.0f : 0.0f;// std::max(0.0f, sum);
+		_hidden[hi]._state = std::max(0.0f, sum);
 	}
 }
 

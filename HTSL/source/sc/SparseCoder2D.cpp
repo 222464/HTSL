@@ -155,7 +155,7 @@ void SparseCoder2D::activate() {
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
 			sum += _hidden[hi]._visibleHiddenConnections[ci]._weight *  _hidden[hi]._visibleHiddenConnections[ci]._falloff * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input;
 
-		_hidden[hi]._activation = std::max(0.0f, sum);
+		_hidden[hi]._activation = sum;
 	}
 
 	// Inhibit

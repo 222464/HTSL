@@ -180,6 +180,8 @@ int main() {
 
 	int frameCounter = 0;
 
+	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+
 	do {
 		sf::Event event;
 
@@ -204,9 +206,9 @@ int main() {
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 			for (int x = 0; x < frameWidth; x++)
 				for (int y = 0; y < frameHeight; y++) {
-					htsl.setInput(x * 3 + 0, y, htsl.getPrediction(x * 3 + 0, y));
-					htsl.setInput(x * 3 + 1, y, htsl.getPrediction(x * 3 + 1, y));
-					htsl.setInput(x * 3 + 2, y, htsl.getPrediction(x * 3 + 2, y));
+					htsl.setInput(x * 3 + 0, y, std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 0, y))));
+					htsl.setInput(x * 3 + 1, y, std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 1, y))));
+					htsl.setInput(x * 3 + 2, y, std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 2, y))));
 				}
 
 			htsl.update();
@@ -215,9 +217,9 @@ int main() {
 		else {
 			for (int x = 0; x < frameWidth; x++)
 				for (int y = 0; y < frameHeight; y++) {
-					htsl.setInput(x * 3 + 0, y, subImage.getPixel(x, y).r / 255.0f);
-					htsl.setInput(x * 3 + 1, y, subImage.getPixel(x, y).g / 255.0f);
-					htsl.setInput(x * 3 + 2, y, subImage.getPixel(x, y).b / 255.0f);
+					htsl.setInput(x * 3 + 0, y, std::min(1.0f, std::max(0.0f, subImage.getPixel(x, y).r / 255.0f)));
+					htsl.setInput(x * 3 + 1, y, std::min(1.0f, std::max(0.0f, subImage.getPixel(x, y).g / 255.0f)));
+					htsl.setInput(x * 3 + 2, y, std::min(1.0f, std::max(0.0f, subImage.getPixel(x, y).b / 255.0f)));
 				}
 
 			htsl.update();
@@ -232,9 +234,9 @@ int main() {
 		for (int x = 0; x < frameWidth; x++)
 			for (int y = 0; y < frameHeight; y++) {
 				sf::Color c;
-				c.r = 255.0f * htsl.getPrediction(x * 3 + 0, y);
-				c.g = 255.0f * htsl.getPrediction(x * 3 + 1, y);
-				c.b = 255.0f * htsl.getPrediction(x * 3 + 2, y);
+				c.r = 255.0f * std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 0, y)));
+				c.g = 255.0f * std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 1, y)));
+				c.b = 255.0f * std::min(1.0f, std::max(0.0f, htsl.getPrediction(x * 3 + 2, y)));
 
 				predictionImage.setPixel(x, y, c);
 			}
@@ -289,7 +291,7 @@ int main() {
 			alignment += scale * sdr.getSize().x;
 		}
 
-		frameCounter = (frameCounter + 1) % numFrames;
+		frameCounter = (frameCounter + 4) % numFrames;
 
 		renderWindow.display();
 	} while (!quit);
