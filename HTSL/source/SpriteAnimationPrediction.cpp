@@ -53,6 +53,47 @@ public:
 	}
 };
 
+class FileAnimation {
+public:
+	std::vector<sf::Image> _images;
+	std::vector<sf::Texture> _textures;
+
+	bool loadFromFile(const std::string &root, const std::string &extension, int count) {
+		bool loaded = true;
+
+		_images.resize(count);
+		_textures.resize(count);
+
+		for (int i = 0; i < count; i++) {
+			int places = 0;
+
+			int n = i;
+
+			while (n >= 10) {
+				n /= 10;
+
+				if (n > 0)
+					places++;
+			}
+
+			std::string fullName = root;
+
+			for (int p = 0; p < 4 - places; p++)
+				fullName.push_back('0');
+
+			fullName += std::to_string(i) + extension;
+
+			if (!_images[i].loadFromFile(fullName))
+				loaded = false;
+
+			if (!_textures[i].loadFromImage(_images[i]))
+				loaded = false;
+		}
+
+		return loaded;
+	}
+};
+
 void generateCountSequence() {
 	const int numCount = 40;
 	const int width = 32;
@@ -102,12 +143,15 @@ int main() {
 
 	//generateCountSequence();
 
-	const int frameWidth = 32;
-	const int frameHeight = 32;
-	const int numFrames = 40;
+	const int frameWidth = 64;
+	const int frameHeight = 48;
+	const int numFrames = 90;
 
-	Animation animation;
-	animation.loadFromFile("resources/numberSequence.png");
+	FileAnimation animation;
+	animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
+
+	//Animation animation;
+	//animation.loadFromFile("resources/animation.png");
 
 	sc::HTSL htsl;
 
@@ -128,7 +172,7 @@ int main() {
 
 	sf::RenderWindow renderWindow(sf::VideoMode(1280, 720), "Sprite Animation", sf::Style::Default);
 
-	renderWindow.setFramerateLimit(10);
+	renderWindow.setFramerateLimit(30);
 
 	bool quit = false;
 
@@ -153,7 +197,9 @@ int main() {
 		renderWindow.clear();
 
 		sf::Image subImage;
-		animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
+		//animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
+
+		subImage = animation._images[frameCounter];
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 			for (int x = 0; x < frameWidth; x++)
@@ -208,12 +254,40 @@ int main() {
 
 		sf::Sprite s;
 
-		s.setTexture(animation._texture);
-		s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
+		s.setTexture(animation._textures[frameCounter]);
+		//s.setTexture(animation._texture);
+		//s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
 
 		s.setScale(scale, scale);
 
 		renderWindow.draw(s);
+
+		float alignment = 0.0f;
+
+		for (int l = 0; l < htsl.getLayers().size(); l++) {
+			sf::Image sdr;
+			sdr.create(htsl.getLayerDescs()[l]._width, htsl.getLayerDescs()[l]._height);
+
+			for (int x = 0; x < htsl.getLayerDescs()[l]._width; x++)
+				for (int y = 0; y < htsl.getLayerDescs()[l]._height; y++) {
+					sf::Color c;
+					c.r = c.g = c.b = htsl.getLayers()[l]._rsc.getHiddenState(x, y) * 255.0f;
+
+					sdr.setPixel(x, y, c); 
+				}
+
+			sf::Texture sdrt;
+			sdrt.loadFromImage(sdr);
+
+			sf::Sprite sdrs;
+			sdrs.setTexture(sdrt);
+			sdrs.setPosition(alignment, renderWindow.getSize().y - sdr.getSize().y * scale);
+			sdrs.setScale(scale, scale);
+
+			renderWindow.draw(sdrs);
+
+			alignment += scale * sdr.getSize().x;
+		}
 
 		frameCounter = (frameCounter + 1) % numFrames;
 

@@ -7,6 +7,7 @@
 
 #include <ex/Agent.h>
 #include <ex/RandomAgent.h>
+#include <ex/HTSLRLAgent.h>
 #include <ex/Experiment.h>
 #include <ex/ExPoleBalancing.h>
 
@@ -27,9 +28,9 @@ int main() {
 
 	poleBalancing.initializeVisualization();
 
-	ex::RandomAgent randomAgent;
+	ex::HTSLRLAgent agent;
 
-	randomAgent.initialize(poleBalancing.getNumInputs(), poleBalancing.getNumOutputs());
+	agent.initialize(poleBalancing.getNumInputs(), poleBalancing.getNumOutputs());
 
 	// ---------------------------------- Plotting -----------------------------------
 
@@ -77,7 +78,7 @@ int main() {
 
 		renderWindow.clear();
 
-		float reward = poleBalancing.runStep(randomAgent, dt);
+		float reward = poleBalancing.runStep(agent, dt);
 
 		minReward = std::min(minReward, reward);
 		maxReward = std::max(maxReward, reward);

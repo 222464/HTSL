@@ -57,7 +57,7 @@ void RecurrentSparseCoder2D::createRandom(int visibleWidth, int visibleHeight, i
 
 					VisibleConnection c;
 
-					c._weight = weightDist(generator);
+					c._weight = weightDist(generator) * 2.0f - 1.0f;
 					c._index = vi;
 					c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(receptiveRadius + 1));
 
