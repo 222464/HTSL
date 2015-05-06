@@ -31,8 +31,8 @@ namespace sc {
 				_receptiveRadius(8), _inhibitionRadius(6), _recurrentRadius(8),
 				_feedbackRadius(8), _lateralRadius(8),
 				_sparsity(1.0f / 121.0f), 
-				_rscAlpha(0.005f), _rscBetaVisible(0.01f), _rscBetaHidden(0.01f), _rscGamma(0.005f), _rscDeltaVisible(0.05f), _rscDeltaHidden(0.05f),
-				_predictionAlpha(0.05f)
+				_rscAlpha(0.05f), _rscBetaVisible(0.01f), _rscBetaHidden(0.01f), _rscGamma(0.005f), _rscDeltaVisible(0.05f), _rscDeltaHidden(0.05f),
+				_predictionAlpha(0.2f)
 			{}
 		};
 

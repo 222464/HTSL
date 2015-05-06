@@ -29,11 +29,13 @@ namespace ex {
 		sf::Texture _cartTexture;
 		sf::Texture _poleTexture;
 
+		float _prevFitness;
+
 	public:
 		ExPoleBalancing()
 			: _massPos(0.0f, _poleLength), _massVel(0.0f, 0.0f),
 			_poleAngle(0.0f), _poleAngleVel(0.0f), _poleAngleAccel(0.0f),
-			_cartX(0.0f), _cartVelX(0.0f), _cartAccelX(0.0f)
+			_cartX(0.0f), _cartVelX(0.0f), _cartAccelX(0.0f), _prevFitness(0.0f)
 		{}
 
 		float runStep(Agent &agent, float dt) override;

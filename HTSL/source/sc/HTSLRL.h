@@ -8,29 +8,27 @@ namespace sc {
 	class HTSLRL {
 	public:
 		enum InputType {
-			_state, _action, _q
+			_state, _action, _pv, _lv
 		};
 
 	private:
-		struct TraceConnection {
+		struct Connection {
 			float _weight;
-			float _trace;
 			unsigned short _index;
 
-			TraceConnection()
-				: _trace(0.0f)
+			Connection()
 			{}
 		};
 
-		struct TraceNode {
-			std::vector<TraceConnection> _firstHiddenConnections;
+		struct Node {
+			std::vector<Connection> _firstHiddenConnections;
 
 			unsigned short _inputIndex;
 
 			float _state;
 			float _output;
 
-			TraceNode()
+			Node()
 				: _state(0.0f), _output(0.0f)
 			{}
 		};
@@ -39,30 +37,22 @@ namespace sc {
 
 		std::vector<InputType> _inputTypes;
 
-		std::vector<TraceNode> _actionNodes;
-		std::vector<TraceNode> _qNodes;
+		std::vector<Node> _actionNodes;
+		std::vector<Node> _pvNodes;
+		std::vector<Node> _lvNodes;
 
 		int _actionQRadius;
 
 		float _prevValue;
-		float _prevNewQ;
+		float _expectedReward;
+		float _expectedSecondary;
 
 	public:
 		float _actionRandomizeChance;
 		float _actionPerturbationStdDev;
 
-		float _qAlpha;
-		float _qTraceDecay;
-		float _qGamma;
-
-		float _actionAlpha;
-		float _actionBeta;
-		float _actionTraceDecay;
-		float _actionTraceTemperature;
-
 		HTSLRL()
-			: _prevValue(0.0f), _prevNewQ(0.0f), _actionRandomizeChance(0.01f), _actionPerturbationStdDev(0.01f),
-			_qAlpha(0.005f), _qTraceDecay(0.01f), _qGamma(0.992f), _actionAlpha(0.01f), _actionBeta(0.5f), _actionTraceDecay(0.01f), _actionTraceTemperature(2.0f)
+			: _prevValue(0.0f), _expectedReward(0.0f), _expectedSecondary(0.0f), _actionRandomizeChance(0.1f), _actionPerturbationStdDev(0.1f)
 		{}
 
 		void createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator);
@@ -77,16 +67,24 @@ namespace sc {
 			return _actionNodes.size();
 		}
 
-		int getNumQNodes() const {
-			return _qNodes.size();
+		int getNumPVNodes() const {
+			return _pvNodes.size();
+		}
+
+		int getNumLVNodes() const {
+			return _lvNodes.size();
 		}
 
 		float getActionFromNodeIndex(int nodeIndex) const {
 			return _actionNodes[nodeIndex]._output;
 		}
 
-		float getQFromNodeIndex(int nodeIndex) const {
-			return _qNodes[nodeIndex]._state;
+		float getPVFromNodeIndex(int nodeIndex) const {
+			return _pvNodes[nodeIndex]._state;
+		}
+
+		float getLVFromNodeIndex(int nodeIndex) const {
+			return _lvNodes[nodeIndex]._state;
 		}
 
 		void update(float reward, std::mt19937 &generator);

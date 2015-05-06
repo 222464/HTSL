@@ -2,15 +2,18 @@
 
 using namespace ex;
 
-const int numQContrastValues = 3;
-const int numQNodes = numQContrastValues * 2;
+const int numPVContrastValues = 3;
+const int numPVNodes = numPVContrastValues * 2;
+
+const int numLVContrastValues = 3;
+const int numLVNodes = numLVContrastValues * 2;
 
 void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 	_generator.seed(time(nullptr));
 
-	int rootDim = std::ceil(std::sqrt(static_cast<float>(numInputs * 2 + numOutputs * 2 + numQNodes)));
+	int rootDim = std::ceil(std::sqrt(static_cast<float>(numInputs * 2 + numOutputs * 2 + numPVNodes + numLVNodes)));
 
-	int totalState = numInputs * 2 + numOutputs + numQContrastValues;
+	int totalState = numInputs * 2 + numOutputs + numPVContrastValues + numLVContrastValues;
 
 	std::vector<sc::HTSLRL::InputType> inputTypes(rootDim * rootDim);
 
@@ -19,8 +22,12 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 			inputTypes[i] = sc::HTSLRL::_state;
 		else if (i < totalState + numOutputs)
 			inputTypes[i] = sc::HTSLRL::_action;
-		else if (i < totalState + numOutputs + numQContrastValues)
-			inputTypes[i] = sc::HTSLRL::_q;
+		else if (i < totalState + numOutputs + numPVContrastValues)
+			inputTypes[i] = sc::HTSLRL::_pv;
+		else if (i < totalState + numOutputs + numPVContrastValues + numLVContrastValues)
+			inputTypes[i] = sc::HTSLRL::_lv;
+		else 
+			inputTypes[i] = sc::HTSLRL::_state;
 	}
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
@@ -48,8 +55,11 @@ void HTSLRLAgent::getOutput(Experiment* pExperiment, const std::vector<float> &i
 	for (int i = 0; i < _htslrl.getNumActionNodes(); i++)
 		_htslrl.setState(inputIndex++, _htslrl.getActionFromNodeIndex(i) + 1.0f);
 
-	for (int i = 0; i < numQContrastValues; i++)
-		_htslrl.setState(inputIndex++, _htslrl.getQFromNodeIndex(i) + 1.0f);
+	for (int i = 0; i < numPVContrastValues; i++)
+		_htslrl.setState(inputIndex++, _htslrl.getPVFromNodeIndex(i) + 1.0f);
+
+	for (int i = 0; i < numLVContrastValues; i++)
+		_htslrl.setState(inputIndex++, _htslrl.getLVFromNodeIndex(i) + 1.0f);
 
 	_htslrl.update(reward, _generator);
 

@@ -5,10 +5,9 @@
 
 namespace ex {
 	class HTSLRLAgent : public Agent {
-	private:
-		sc::HTSLRL _htslrl;
-
 	public:
+		sc::HTSLRL _htslrl;
+	
 		std::mt19937 _generator;
 
 		void initialize(int numInputs, int numOutputs) override;

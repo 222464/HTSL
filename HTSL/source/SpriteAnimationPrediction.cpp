@@ -148,7 +148,7 @@ int main() {
 	const int numFrames = 90;
 
 	FileAnimation animation;
-	animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
+	animation.loadFromFile("resources/rendersequence2/rendersequence_", ".png", numFrames);
 
 	//Animation animation;
 	//animation.loadFromFile("resources/animation.png");
@@ -172,7 +172,7 @@ int main() {
 
 	sf::RenderWindow renderWindow(sf::VideoMode(1280, 720), "Sprite Animation", sf::Style::Default);
 
-	renderWindow.setFramerateLimit(30);
+	renderWindow.setFramerateLimit(20);
 
 	bool quit = false;
 

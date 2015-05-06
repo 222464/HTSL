@@ -114,6 +114,35 @@ int main() {
 
 		renderWindow.draw(plotSprite);
 
+		float scale = 2.0f;
+
+		float alignment = 0.0f;
+
+		for (int l = 0; l < agent._htslrl.getHTSL().getLayers().size(); l++) {
+			sf::Image sdr;
+			sdr.create(agent._htslrl.getHTSL().getLayerDescs()[l]._width, agent._htslrl.getHTSL().getLayerDescs()[l]._height);
+
+			for (int x = 0; x < agent._htslrl.getHTSL().getLayerDescs()[l]._width; x++)
+				for (int y = 0; y < agent._htslrl.getHTSL().getLayerDescs()[l]._height; y++) {
+					sf::Color c;
+					c.r = c.g = c.b = agent._htslrl.getHTSL().getLayers()[l]._rsc.getHiddenState(x, y) * 255.0f;
+
+					sdr.setPixel(x, y, c);
+				}
+
+			sf::Texture sdrt;
+			sdrt.loadFromImage(sdr);
+
+			sf::Sprite sdrs;
+			sdrs.setTexture(sdrt);
+			sdrs.setPosition(alignment, renderWindow.getSize().y - sdr.getSize().y * scale);
+			sdrs.setScale(scale, scale);
+
+			renderWindow.draw(sdrs);
+
+			alignment += scale * sdr.getSize().x;
+		}
+
 		renderWindow.display();
 	} while (!quit);
 

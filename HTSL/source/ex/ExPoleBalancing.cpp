@@ -2,6 +2,10 @@
 
 using namespace ex;
 
+float exsigmoid(float x) {
+	return 1.0f / (1.0f + std::exp(-x));
+}
+
 float ExPoleBalancing::runStep(Agent &agent, float dt) {
 	float pendulumCartAccelX = _cartAccelX;
 
@@ -16,14 +20,21 @@ float ExPoleBalancing::runStep(Agent &agent, float dt) {
 
 	_massPos = sf::Vector2f(_cartX + std::cos(_poleAngle + static_cast<float>(3.141596f) * 0.5f) * _poleLength, std::sin(_poleAngle + static_cast<float>(3.141596f) * 0.5f) * _poleLength);
 
-	float reward;
+	float fitness;
 	
 	if (_poleAngle < static_cast<float>(3.141596f))
-		reward = -(static_cast<float>(3.141596f) * 0.5f - _poleAngle);
+		fitness = -(static_cast<float>(3.141596f) * 0.5f - _poleAngle);
 	else
-		reward = -(static_cast<float>(3.141596f) * 0.5f - (static_cast<float>(3.141596f) * 2.0f - _poleAngle));
+		fitness = -(static_cast<float>(3.141596f) * 0.5f - (static_cast<float>(3.141596f) * 2.0f - _poleAngle));
 
-	reward = -_cartX * 0.005f;
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+		fitness = -_cartX;
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+		fitness = _cartX;
+
+	float reward = exsigmoid(1000.0f * (fitness - _prevFitness));
+
+	_prevFitness = fitness;
 
 	float averageDecay = 0.2f;
 
@@ -41,6 +52,13 @@ float ExPoleBalancing::runStep(Agent &agent, float dt) {
 
 	if (std::abs(_cartVelX) < _maxSpeed)
 		force = std::max(-4000.0f, std::min(4000.0f, output[0] * 4000.0f));
+
+	if (std::abs(_cartVelX) < _maxSpeed) {
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+			force = -4000.0f;
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+			force = 4000.0f;
+	}
 
 	if (_cartX < -_cartMoveRadius) {
 		_cartX = -_cartMoveRadius;
