@@ -145,10 +145,10 @@ int main() {
 
 	const int frameWidth = 64;
 	const int frameHeight = 48;
-	const int numFrames = 90;
+	const int numFrames = 300;
 
 	FileAnimation animation;
-	animation.loadFromFile("resources/rendersequence2/rendersequence_", ".png", numFrames);
+	animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
 
 	//Animation animation;
 	//animation.loadFromFile("resources/animation.png");
@@ -157,14 +157,14 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 64;
-	layerDescs[0]._height = 64;
+	layerDescs[0]._width = 128;
+	layerDescs[0]._height = 128;
 
-	layerDescs[1]._width = 48;
-	layerDescs[1]._height = 48;
+	layerDescs[1]._width = 96;
+	layerDescs[1]._height = 96;
 
-	layerDescs[2]._width = 32;
-	layerDescs[2]._height = 32;
+	layerDescs[2]._width = 64;
+	layerDescs[2]._height = 64;
 
 	htsl.createRandom(frameWidth * 3, frameHeight, layerDescs, generator);
 
@@ -244,7 +244,7 @@ int main() {
 		sf::Texture predictionTexture;
 		predictionTexture.loadFromImage(predictionImage);
 
-		const float scale = 4.0f;
+		const float scale = 3.0f;
 
 		sf::Sprite p;
 		p.setTexture(predictionTexture);

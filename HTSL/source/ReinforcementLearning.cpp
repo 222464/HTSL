@@ -10,6 +10,7 @@
 #include <ex/HTSLRLAgent.h>
 #include <ex/Experiment.h>
 #include <ex/ExPoleBalancing.h>
+#include <ex/ExMountainCar.h>
 
 #include <vis/Plot.h>
 
@@ -24,13 +25,13 @@ int main() {
 	// ---------------------------------- RL Init ------------------------------------
 
 	// Change experiments and agents here!
-	ex::ExPoleBalancing poleBalancing;
+	ex::ExMountainCar experiment;
 
-	poleBalancing.initializeVisualization();
+	experiment.initializeVisualization();
 
 	ex::HTSLRLAgent agent;
 
-	agent.initialize(poleBalancing.getNumInputs(), poleBalancing.getNumOutputs());
+	agent.initialize(experiment.getNumInputs(), experiment.getNumOutputs());
 
 	// ---------------------------------- Plotting -----------------------------------
 
@@ -78,7 +79,7 @@ int main() {
 
 		renderWindow.clear();
 
-		float reward = poleBalancing.runStep(agent, dt);
+		float reward = experiment.runStep(agent, dt);
 
 		minReward = std::min(minReward, reward);
 		maxReward = std::max(maxReward, reward);
@@ -98,7 +99,7 @@ int main() {
 
 		plotSampleCounter++;
 
-		poleBalancing.visualize(renderWindow);
+		experiment.visualize(renderWindow);
 
 		plotRT.setActive();
 		plotRT.clear(sf::Color::White);

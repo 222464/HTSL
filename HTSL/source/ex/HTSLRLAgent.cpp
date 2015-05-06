@@ -2,18 +2,21 @@
 
 using namespace ex;
 
-const int numPVContrastValues = 3;
+const int numPVContrastValues = 1;
 const int numPVNodes = numPVContrastValues * 2;
 
-const int numLVContrastValues = 3;
-const int numLVNodes = numLVContrastValues * 2;
+const int numLVEContrastValues = 1;
+const int numLVENodes = numLVEContrastValues * 2;
+
+const int numLVIContrastValues = 1;
+const int numLVINodes = numLVIContrastValues * 2;
 
 void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 	_generator.seed(time(nullptr));
 
-	int rootDim = std::ceil(std::sqrt(static_cast<float>(numInputs * 2 + numOutputs * 2 + numPVNodes + numLVNodes)));
+	int rootDim = std::ceil(std::sqrt(static_cast<float>(numInputs * 2 + numOutputs * 2 + numPVNodes + numLVENodes + numLVINodes)));
 
-	int totalState = numInputs * 2 + numOutputs + numPVContrastValues + numLVContrastValues;
+	int totalState = numInputs * 2 + numOutputs + numPVContrastValues + numLVEContrastValues + numLVIContrastValues;
 
 	std::vector<sc::HTSLRL::InputType> inputTypes(rootDim * rootDim);
 
@@ -24,8 +27,10 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 			inputTypes[i] = sc::HTSLRL::_action;
 		else if (i < totalState + numOutputs + numPVContrastValues)
 			inputTypes[i] = sc::HTSLRL::_pv;
-		else if (i < totalState + numOutputs + numPVContrastValues + numLVContrastValues)
-			inputTypes[i] = sc::HTSLRL::_lv;
+		else if (i < totalState + numOutputs + numPVContrastValues + numLVEContrastValues)
+			inputTypes[i] = sc::HTSLRL::_lve;
+		else if (i < totalState + numOutputs + numPVContrastValues + numLVEContrastValues + numLVIContrastValues)
+			inputTypes[i] = sc::HTSLRL::_lvi;
 		else 
 			inputTypes[i] = sc::HTSLRL::_state;
 	}
@@ -58,8 +63,11 @@ void HTSLRLAgent::getOutput(Experiment* pExperiment, const std::vector<float> &i
 	for (int i = 0; i < numPVContrastValues; i++)
 		_htslrl.setState(inputIndex++, _htslrl.getPVFromNodeIndex(i) + 1.0f);
 
-	for (int i = 0; i < numLVContrastValues; i++)
-		_htslrl.setState(inputIndex++, _htslrl.getLVFromNodeIndex(i) + 1.0f);
+	for (int i = 0; i < numLVEContrastValues; i++)
+		_htslrl.setState(inputIndex++, _htslrl.getLVEFromNodeIndex(i) + 1.0f);
+
+	for (int i = 0; i < numLVIContrastValues; i++)
+		_htslrl.setState(inputIndex++, _htslrl.getLVIFromNodeIndex(i) + 1.0f);
 
 	_htslrl.update(reward, _generator);
 

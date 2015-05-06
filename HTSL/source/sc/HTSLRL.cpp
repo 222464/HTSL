@@ -139,7 +139,7 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 
 			break;
 		}
-		case _lv:
+		case _lve:
 		{
 			Node lvNode;
 
@@ -191,7 +191,63 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
 				lvNode._firstHiddenConnections[ci]._weight *= normMult;
 
-			_lvNodes.push_back(lvNode);
+			_lveNodes.push_back(lvNode);
+
+			break;
+		}
+		case _lvi:
+		{
+			Node lvNode;
+
+			lvNode._inputIndex = vi;
+			lvNode._firstHiddenConnections.reserve(actionQSize);
+
+			int centerX = std::round(visibleToHiddenWidth * vx);
+			int centerY = std::round(visibleToHiddenHeight * vy);
+
+			float dist2 = 0.0f;
+
+			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
+				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
+					int hx = centerX + dx;
+					int hy = centerY + dy;
+
+					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
+						int hi = hx + hy * layerDescs.front()._width;
+
+						{
+							Connection c;
+
+							c._weight = dist01(generator);
+							c._index = hi;
+
+							lvNode._firstHiddenConnections.push_back(c);
+
+							dist2 += c._weight * c._weight;
+						}
+
+						// Secondary prediction connection
+						{
+							Connection c;
+
+							c._weight = dist01(generator);
+							c._index = hi;
+
+							lvNode._firstHiddenConnections.push_back(c);
+
+							dist2 += c._weight * c._weight;
+						}
+					}
+				}
+
+			lvNode._firstHiddenConnections.shrink_to_fit();
+
+			float normMult = 1.0f / dist2;
+
+			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
+				lvNode._firstHiddenConnections[ci]._weight *= normMult;
+
+			_lviNodes.push_back(lvNode);
 
 			break;
 		}
@@ -202,29 +258,40 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 }
 
 void HTSLRL::update(float reward, std::mt19937 &generator) {
+	float targetP = _expectedReward + _expectedAlpha * (reward - _expectedReward);
+
 	for (int ni = 0; ni < _pvNodes.size(); ni++)
-		_htsl.setInput(_pvNodes[ni]._inputIndex, reward);
+		_htsl.setInput(_pvNodes[ni]._inputIndex, targetP);
 
 	float pvError = reward - _expectedReward;
 
-	bool pvFilter = reward > 0.5f && _expectedReward > 0.5f;
+	bool pvFilter = (reward < _thetaMin || _expectedReward < _thetaMin) || (reward > _thetaMax || _expectedReward > _thetaMax);
 
 	float lvError;
 
 	if (pvFilter) {
-		for (int ni = 0; ni < _lvNodes.size(); ni++)
-			_htsl.setInput(_lvNodes[ni]._inputIndex, reward);
+		float targetE = _expectedSecondaryE + _secondaryAlphaE * (reward - _expectedSecondaryE);
+		float targetI = _expectedSecondaryI + _secondaryAlphaI * (reward - _expectedSecondaryI);
 
-		lvError = reward - _expectedSecondary;
+		for (int ni = 0; ni < _lveNodes.size(); ni++)
+			_htsl.setInput(_lveNodes[ni]._inputIndex, targetE);
+
+		for (int ni = 0; ni < _lviNodes.size(); ni++)
+			_htsl.setInput(_lviNodes[ni]._inputIndex, targetI);
+
+		lvError = targetE - _expectedSecondaryI;
 	}
 	else {
-		for (int ni = 0; ni < _lvNodes.size(); ni++)
-			_htsl.setInput(_lvNodes[ni]._inputIndex, 0.0f);
+		for (int ni = 0; ni < _lveNodes.size(); ni++)
+			_htsl.setInput(_lveNodes[ni]._inputIndex, _expectedSecondaryE);
 
-		lvError = -_expectedSecondary;
+		for (int ni = 0; ni < _lviNodes.size(); ni++)
+			_htsl.setInput(_lviNodes[ni]._inputIndex, _expectedSecondaryI);
+
+		lvError = _expectedSecondaryE - _expectedSecondaryI;
 	}
 
-	float error = pvFilter ? pvError : lvError;
+	float error = pvFilter ? (lvError + pvError) : lvError;
 
 	if (error > 0.0f) {
 		for (int ni = 0; ni < _actionNodes.size(); ni++) {
@@ -253,13 +320,21 @@ void HTSLRL::update(float reward, std::mt19937 &generator) {
 
 	float expectedReward = pvSum / _pvNodes.size();
 
-	float lvSum = 0.0f;
+	float lveSum = 0.0f;
 
-	for (int ni = 0; ni < _lvNodes.size(); ni++) {
-		lvSum += _htsl.getPrediction(_lvNodes[ni]._inputIndex);
+	for (int ni = 0; ni < _lveNodes.size(); ni++) {
+		lveSum += _htsl.getPrediction(_lveNodes[ni]._inputIndex);
 	}
 
-	float expectedSecondary = lvSum / _lvNodes.size();
+	float expectedSecondaryE = lveSum / _lveNodes.size();
+
+	float lviSum = 0.0f;
+
+	for (int ni = 0; ni < _lviNodes.size(); ni++) {
+		lviSum += _htsl.getPrediction(_lviNodes[ni]._inputIndex);
+	}
+
+	float expectedSecondaryI = lviSum / _lviNodes.size();
 
 	// Derive new actions
 	for (int ni = 0; ni < _actionNodes.size(); ni++) {
@@ -272,9 +347,10 @@ void HTSLRL::update(float reward, std::mt19937 &generator) {
 	}
 
 	_expectedReward = expectedReward;
-	_expectedSecondary = expectedSecondary;
+	_expectedSecondaryE = expectedSecondaryE;
+	_expectedSecondaryI = expectedSecondaryI;
 
-	std::cout << reward << " " << _expectedReward << " " << _expectedSecondary << " " << error << " " << (pvFilter ? "F" : "N") << std::endl;
+	std::cout << reward << " " << _expectedReward << " " << _expectedSecondaryE << " " << _expectedSecondaryI << " " << error << " " << (pvFilter ? "F" : "N") << std::endl;
 
 	_htsl.stepEnd();
 }
