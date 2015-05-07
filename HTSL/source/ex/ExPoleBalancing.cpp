@@ -32,7 +32,7 @@ float ExPoleBalancing::runStep(Agent &agent, float dt) {
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 		fitness = _cartX;
 
-	float reward = exsigmoid(100.0f * (fitness - _prevFitness));
+	float reward = fitness * 0.01f;
 
 	_prevFitness = fitness;
 

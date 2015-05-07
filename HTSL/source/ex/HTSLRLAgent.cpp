@@ -27,7 +27,7 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 
 	layerDescs[0]._width = 32;
 	layerDescs[0]._height = 32;
-	layerDescs[0]._predictionAlpha = 0.001f;
+	layerDescs[0]._predictionAlpha = 0.01f;
 
 	layerDescs[1]._width = 24;
 	layerDescs[1]._height = 24;

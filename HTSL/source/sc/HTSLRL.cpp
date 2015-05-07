@@ -168,7 +168,7 @@ void HTSLRL::update(float reward, std::mt19937 &generator) {
 		}
 	}
 
-	float nextQ = qSum / _qNodes.size();
+	float nextQ = qSum;
 
 	float newQ = reward + _qGamma * nextQ;
 
@@ -177,7 +177,7 @@ void HTSLRL::update(float reward, std::mt19937 &generator) {
 	std::cout << nextQ << " " << newQ << " " << tdError << " " << _actionNodes[0]._state << std::endl;
 
 	for (int ni = 0; ni < _qNodes.size(); ni++) {
-		float alphaError = _qAlpha * (newQ - _qNodes[ni]._state);
+		float alphaError = _qAlpha * tdError;
 
 		for (int ci = 0; ci < _qNodes[ni]._firstHiddenConnections.size(); ci++) {
 			_qNodes[ni]._firstHiddenConnections[ci]._weight += alphaError * _qNodes[ni]._firstHiddenConnections[ci]._trace;
