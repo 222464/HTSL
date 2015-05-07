@@ -11,7 +11,7 @@ float mcsigmoid(float x) {
 float ExMountainCar::runStep(Agent &agent, float dt) {
 	float fitness = (std::sin(_position * 3.0f) + 1.0f) * 0.5f;
 
-	float reward = fitness > _prevFitness ? 1.0f : 0.5f;// mcsigmoid(200.0f * (fitness - _prevFitness));
+	float reward = fitness * 1.0f;
 
 	std::vector<float> input(2);
 

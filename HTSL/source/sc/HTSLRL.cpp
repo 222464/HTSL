@@ -83,12 +83,12 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 
 			break;
 		}
-		case _pv:
+		case _q:
 		{
-			Node pvNode;
+			Node qNode;
 
-			pvNode._inputIndex = vi;
-			pvNode._firstHiddenConnections.reserve(actionQSize);
+			qNode._inputIndex = vi;
+			qNode._firstHiddenConnections.reserve(actionQSize);
 
 			int centerX = std::round(visibleToHiddenWidth * vx);
 			int centerY = std::round(visibleToHiddenHeight * vy);
@@ -109,7 +109,7 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 							c._weight = dist01(generator);
 							c._index = hi;
 
-							pvNode._firstHiddenConnections.push_back(c);
+							qNode._firstHiddenConnections.push_back(c);
 
 							dist2 += c._weight * c._weight;
 						}
@@ -121,133 +121,21 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 							c._weight = dist01(generator);
 							c._index = hi;
 
-							pvNode._firstHiddenConnections.push_back(c);
+							qNode._firstHiddenConnections.push_back(c);
 
 							dist2 += c._weight * c._weight;
 						}
 					}
 				}
 
-			pvNode._firstHiddenConnections.shrink_to_fit();
+			qNode._firstHiddenConnections.shrink_to_fit();
 
 			float normMult = 1.0f / dist2;
 
-			for (int ci = 0; ci < pvNode._firstHiddenConnections.size(); ci++)
-				pvNode._firstHiddenConnections[ci]._weight *= normMult;
+			for (int ci = 0; ci < qNode._firstHiddenConnections.size(); ci++)
+				qNode._firstHiddenConnections[ci]._weight *= normMult;
 
-			_pvNodes.push_back(pvNode);
-
-			break;
-		}
-		case _lve:
-		{
-			Node lvNode;
-
-			lvNode._inputIndex = vi;
-			lvNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			lvNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / dist2;
-
-			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
-				lvNode._firstHiddenConnections[ci]._weight *= normMult;
-
-			_lveNodes.push_back(lvNode);
-
-			break;
-		}
-		case _lvi:
-		{
-			Node lvNode;
-
-			lvNode._inputIndex = vi;
-			lvNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			lvNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / dist2;
-
-			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
-				lvNode._firstHiddenConnections[ci]._weight *= normMult;
-
-			_lviNodes.push_back(lvNode);
+			_qNodes.push_back(qNode);
 
 			break;
 		}
@@ -258,87 +146,71 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 }
 
 void HTSLRL::update(float reward, std::mt19937 &generator) {
-	float targetP = _expectedReward + _expectedAlpha * (reward - _expectedReward);
+	for (int ni = 0; ni < _qNodes.size(); ni++)
+		_htsl.setInput(_qNodes[ni]._inputIndex, _prevNewQ);
 
-	for (int ni = 0; ni < _pvNodes.size(); ni++)
-		_htsl.setInput(_pvNodes[ni]._inputIndex, targetP);
-
-	float pvError = reward - _expectedReward;
-
-	bool pvFilter = (reward < _thetaMin || _expectedReward < _thetaMin) || (reward > _thetaMax || _expectedReward > _thetaMax);
-
-	float lvError;
-
-	if (pvFilter) {
-		float targetE = _expectedSecondaryE + _secondaryAlphaE * (reward - _expectedSecondaryE);
-		float targetI = _expectedSecondaryI + _secondaryAlphaI * (reward - _expectedSecondaryI);
-
-		for (int ni = 0; ni < _lveNodes.size(); ni++)
-			_htsl.setInput(_lveNodes[ni]._inputIndex, targetE);
-
-		for (int ni = 0; ni < _lviNodes.size(); ni++)
-			_htsl.setInput(_lviNodes[ni]._inputIndex, targetI);
-
-		lvError = targetE - _expectedSecondaryI;
-	}
-	else {
-		for (int ni = 0; ni < _lveNodes.size(); ni++)
-			_htsl.setInput(_lveNodes[ni]._inputIndex, _expectedSecondaryE);
-
-		for (int ni = 0; ni < _lviNodes.size(); ni++)
-			_htsl.setInput(_lviNodes[ni]._inputIndex, _expectedSecondaryI);
-
-		lvError = _expectedSecondaryE - _expectedSecondaryI;
-	}
-
-	float error = pvFilter ? (lvError + pvError) : lvError;
-
-	if (error > 0.0f) {
-		for (int ni = 0; ni < _actionNodes.size(); ni++) {
-			_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._output);
-		}
-	}
-	else {
-		for (int ni = 0; ni < _actionNodes.size(); ni++) {
-			_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._state);
-		}
-	}
-
-	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
-	std::normal_distribution<float> perturbationDist(0.0f, _actionPerturbationStdDev);
+	for (int ni = 0; ni < _actionNodes.size(); ni++)
+		_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._output);
 
 	_htsl.update();
 	_htsl.learnRSC();
 	_htsl.learnPrediction();
 
-	// Collect expected reward
-	float pvSum = 0.0f;
+	// Collect Q
+	float qSum = 0.0f;
 
-	for (int ni = 0; ni < _pvNodes.size(); ni++) {
-		pvSum += _htsl.getPrediction(_pvNodes[ni]._inputIndex);
+	for (int ni = 0; ni < _qNodes.size(); ni++) {
+		for (int ci = 0; ci < _qNodes[ni]._firstHiddenConnections.size(); ci++) {
+			if (ci % 2 == 0)
+				qSum += _qNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers().front()._rsc.getHiddenState(_qNodes[ni]._firstHiddenConnections[ci]._index);
+			else
+				qSum += _qNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers()[1]._predictionNodes[_qNodes[ni]._firstHiddenConnections[ci]._index]._state;
+		}
 	}
 
-	float expectedReward = pvSum / _pvNodes.size();
+	float nextQ = qSum / _qNodes.size();
 
-	float lveSum = 0.0f;
+	float newQ = reward + _qGamma * nextQ;
 
-	for (int ni = 0; ni < _lveNodes.size(); ni++) {
-		lveSum += _htsl.getPrediction(_lveNodes[ni]._inputIndex);
+	float tdError = newQ - _prevValue;
+
+	std::cout << nextQ << " " << newQ << " " << tdError << " " << _actionNodes[0]._state << std::endl;
+
+	for (int ni = 0; ni < _qNodes.size(); ni++) {
+		float alphaError = _qAlpha * (newQ - _qNodes[ni]._state);
+
+		for (int ci = 0; ci < _qNodes[ni]._firstHiddenConnections.size(); ci++) {
+			_qNodes[ni]._firstHiddenConnections[ci]._weight += alphaError * _qNodes[ni]._firstHiddenConnections[ci]._trace;
+
+			if (ci % 2 == 0)
+				_qNodes[ni]._firstHiddenConnections[ci]._trace = std::max((1.0f - _qTraceDecay) * _qNodes[ni]._firstHiddenConnections[ci]._trace, _htsl.getLayers().front()._rsc.getHiddenState(_qNodes[ni]._firstHiddenConnections[ci]._index));
+			else
+				_qNodes[ni]._firstHiddenConnections[ci]._trace = std::max((1.0f - _qTraceDecay) * _qNodes[ni]._firstHiddenConnections[ci]._trace, _htsl.getLayers()[1]._predictionNodes[_qNodes[ni]._firstHiddenConnections[ci]._index]._state);
+		}
 	}
 
-	float expectedSecondaryE = lveSum / _lveNodes.size();
+	float actionLearn = tdError > 0.0f ? _actionAlpha : 0.0f;// std::max(0.0f, _actionAlpha * tdError);
 
-	float lviSum = 0.0f;
-
-	for (int ni = 0; ni < _lviNodes.size(); ni++) {
-		lviSum += _htsl.getPrediction(_lviNodes[ni]._inputIndex);
+	for (int ni = 0; ni < _actionNodes.size(); ni++) {
+		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++)
+			_actionNodes[ni]._firstHiddenConnections[ci]._weight += actionLearn * _actionNodes[ni]._firstHiddenConnections[ci]._trace;
 	}
 
-	float expectedSecondaryI = lviSum / _lviNodes.size();
+	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+	std::normal_distribution<float> perturbationDist(0.0f, _actionPerturbationStdDev);
 
 	// Derive new actions
 	for (int ni = 0; ni < _actionNodes.size(); ni++) {
-		_actionNodes[ni]._state = _htsl.getPrediction(_actionNodes[ni]._inputIndex);
+		float sum = 0.0f;
+
+		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {
+			if (ci % 2 == 0)
+				sum += _actionNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers().front()._rsc.getHiddenState(_actionNodes[ni]._firstHiddenConnections[ci]._index);
+			else
+				sum += _actionNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers()[1]._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state;
+		}
+
+		_actionNodes[ni]._state = sum;
 
 		if (dist01(generator) < _actionRandomizeChance)
 			_actionNodes[ni]._output = dist01(generator);
@@ -346,11 +218,20 @@ void HTSLRL::update(float reward, std::mt19937 &generator) {
 			_actionNodes[ni]._output = std::min(1.0f, std::max(0.0f, std::min(1.0f, std::max(0.0f, _actionNodes[ni]._state)) + perturbationDist(generator)));
 	}
 
-	_expectedReward = expectedReward;
-	_expectedSecondaryE = expectedSecondaryE;
-	_expectedSecondaryI = expectedSecondaryI;
+	// Update traces
+	for (int ni = 0; ni < _actionNodes.size(); ni++) {
+		float delta = _actionNodes[ni]._output - _actionNodes[ni]._state;
 
-	std::cout << reward << " " << _expectedReward << " " << _expectedSecondaryE << " " << _expectedSecondaryI << " " << error << " " << (pvFilter ? "F" : "N") << std::endl;
+		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {
+			if (ci % 2 == 0)
+				_actionNodes[ni]._firstHiddenConnections[ci]._trace = (1.0f - _actionTraceDecay) * _actionNodes[ni]._firstHiddenConnections[ci]._trace + _actionBeta * std::exp(-std::abs(_actionNodes[ni]._firstHiddenConnections[ci]._trace) * _actionTraceTemperature) * delta * _htsl.getLayers().front()._rsc.getHiddenState(_actionNodes[ni]._firstHiddenConnections[ci]._index);
+			else
+				_actionNodes[ni]._firstHiddenConnections[ci]._trace = (1.0f - _actionTraceDecay) * _actionNodes[ni]._firstHiddenConnections[ci]._trace + _actionBeta * std::exp(-std::abs(_actionNodes[ni]._firstHiddenConnections[ci]._trace) * _actionTraceTemperature) * delta * _htsl.getLayers()[1]._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state;
+		}
+	}
+
+	_prevValue = nextQ;
+	_prevNewQ = newQ;
 
 	_htsl.stepEnd();
 }
