@@ -5,20 +5,18 @@
 #include <assert.h>
 
 namespace sc {
-	class HTSLRL {
+	class HTSLPVLV {
 	public:
 		enum InputType {
-			_state, _action, _q
+			_state, _action, _pv, _lve, _lvi
 		};
 
 	private:
 		struct Connection {
 			float _weight;
-			float _trace;
 			unsigned short _index;
 
 			Connection()
-				: _trace(0.0f)
 			{}
 		};
 
@@ -40,29 +38,31 @@ namespace sc {
 		std::vector<InputType> _inputTypes;
 
 		std::vector<Node> _actionNodes;
-		std::vector<Node> _qNodes;
+		std::vector<Node> _pvNodes;
+		std::vector<Node> _lveNodes;
+		std::vector<Node> _lviNodes;
 
 		int _actionQRadius;
 
 		float _prevValue;
-		float _prevNewQ;
+		float _expectedReward;
+		float _expectedSecondaryE;
+		float _expectedSecondaryI;
 
 	public:
 		float _actionRandomizeChance;
 		float _actionPerturbationStdDev;
 
-		float _qAlpha;
-		float _qGamma;
-		float _qTraceDecay;
+		float _expectedAlpha;
+		float _secondaryAlphaE;
+		float _secondaryAlphaI;
 
-		float _actionAlpha;
-		float _actionBeta;
-		float _actionTraceDecay;
-		float _actionTraceTemperature;
+		float _thetaMin;
+		float _thetaMax;
 
-		HTSLRL()
-			: _prevValue(0.0f), _prevNewQ(0.0f), _actionRandomizeChance(0.1f), _actionPerturbationStdDev(0.1f),
-			_qAlpha(0.01f), _qGamma(0.992f), _qTraceDecay(0.01f), _actionAlpha(0.02f), _actionBeta(0.5f), _actionTraceDecay(0.01f), _actionTraceTemperature(4.0f)
+		HTSLPVLV()
+			: _prevValue(0.0f), _expectedReward(0.0f), _expectedSecondaryE(0.0f), _expectedSecondaryI(0.0f), _actionRandomizeChance(0.1f), _actionPerturbationStdDev(0.1f),
+			_expectedAlpha(1.0f), _secondaryAlphaE(1.0f), _secondaryAlphaI(0.1f), _thetaMin(0.49f), _thetaMax(0.51f)
 		{}
 
 		void createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator);
@@ -77,19 +77,35 @@ namespace sc {
 			return _actionNodes.size();
 		}
 
-		int getNumQNodes() const {
-			return _qNodes.size();
+		int getNumPVNodes() const {
+			return _pvNodes.size();
+		}
+
+		int getNumLVENodes() const {
+			return _lveNodes.size();
+		}
+
+		int getNumLVINodes() const {
+			return _lviNodes.size();
 		}
 
 		float getActionFromNodeIndex(int nodeIndex) const {
 			return _actionNodes[nodeIndex]._output;
 		}
 
-		float getQFromNodeIndex(int nodeIndex) const {
-			return _qNodes[nodeIndex]._state;
+		float getPVFromNodeIndex(int nodeIndex) const {
+			return _pvNodes[nodeIndex]._state;
 		}
 
-		void update(float reward, std::mt19937 &generator);
+		float getLVEFromNodeIndex(int nodeIndex) const {
+			return _lveNodes[nodeIndex]._state;
+		}
+
+		float getLVIFromNodeIndex(int nodeIndex) const {
+			return _lviNodes[nodeIndex]._state;
+		}
+
+		void update(float reward, std::mt19937 &generator, bool linearFirstLayer = false);
 
 		const HTSL &getHTSL() const {
 			return _htsl;

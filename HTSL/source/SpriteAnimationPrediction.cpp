@@ -143,28 +143,29 @@ int main() {
 
 	//generateCountSequence();
 
-	const int frameWidth = 64;
-	const int frameHeight = 48;
-	const int numFrames = 300;
+	const int frameWidth = 32;
+	const int frameHeight = 32;
+	const int numFrames = 40;
 
-	FileAnimation animation;
-	animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
+	//FileAnimation animation;
+	//animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
 
-	//Animation animation;
-	//animation.loadFromFile("resources/animation.png");
+	Animation animation;
+	animation.loadFromFile("resources/numberSequence.png");
 
 	sc::HTSL htsl;
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 128;
-	layerDescs[0]._height = 128;
+	layerDescs[0]._width = 64;
+	layerDescs[0]._height = 64;
+	layerDescs[0]._predictionAlpha = 0.01f;
 
-	layerDescs[1]._width = 96;
-	layerDescs[1]._height = 96;
+	layerDescs[1]._width = 48;
+	layerDescs[1]._height = 48;
 
-	layerDescs[2]._width = 64;
-	layerDescs[2]._height = 64;
+	layerDescs[2]._width = 32;
+	layerDescs[2]._height = 32;
 
 	htsl.createRandom(frameWidth * 3, frameHeight, layerDescs, generator);
 
@@ -181,6 +182,8 @@ int main() {
 	int frameCounter = 0;
 
 	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+
+	bool change = false;
 
 	do {
 		sf::Event event;
@@ -199,9 +202,9 @@ int main() {
 		renderWindow.clear();
 
 		sf::Image subImage;
-		//animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
+		animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
 
-		subImage = animation._images[frameCounter];
+		//subImage = animation._images[frameCounter];
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 			for (int x = 0; x < frameWidth; x++)
@@ -227,6 +230,8 @@ int main() {
 			htsl.learnPrediction();
 			htsl.stepEnd();
 		}
+
+		change = !change;
 
 		sf::Image predictionImage;
 		predictionImage.create(frameWidth, frameHeight);
@@ -256,9 +261,9 @@ int main() {
 
 		sf::Sprite s;
 
-		s.setTexture(animation._textures[frameCounter]);
-		//s.setTexture(animation._texture);
-		//s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
+		//s.setTexture(animation._textures[frameCounter]);
+		s.setTexture(animation._texture);
+		s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
 
 		s.setScale(scale, scale);
 
@@ -291,7 +296,12 @@ int main() {
 			alignment += scale * sdr.getSize().x;
 		}
 
-		frameCounter = (frameCounter + 4) % numFrames;
+		int prevFC = frameCounter;
+
+		frameCounter = (frameCounter + 1) % numFrames;
+
+		if (prevFC > frameCounter)
+			change = !change;
 
 		renderWindow.display();
 	} while (!quit);

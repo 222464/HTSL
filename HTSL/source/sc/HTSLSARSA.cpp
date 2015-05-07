@@ -1,4 +1,4 @@
-#include "HTSLRL.h"
+#include "HTSLSARSA.h"
 
 #include <algorithm>
 
@@ -6,7 +6,7 @@
 
 using namespace sc;
 
-void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator) {
+void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator) {
 	assert(inputTypes.size() == inputWidth * inputHeight);
 
 	_inputTypes = inputTypes;
@@ -145,14 +145,14 @@ void HTSLRL::createRandom(int inputWidth, int inputHeight, int actionQRadius, co
 	_htsl.createRandom(inputWidth, inputHeight, layerDescs, generator);
 }
 
-void HTSLRL::update(float reward, std::mt19937 &generator) {
+void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 	for (int ni = 0; ni < _qNodes.size(); ni++)
 		_htsl.setInput(_qNodes[ni]._inputIndex, _prevNewQ);
 
 	for (int ni = 0; ni < _actionNodes.size(); ni++)
 		_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._output);
 
-	_htsl.update();
+	_htsl.updateLinearFirstLayer();
 	_htsl.learnRSC();
 	_htsl.learnPrediction();
 
