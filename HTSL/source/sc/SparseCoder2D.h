@@ -66,10 +66,11 @@ namespace sc {
 
 			float _state;
 			float _statePrev;
+			float _error;
 			float _activation;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _activation(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _error(0.0f), _activation(0.0f)
 			{}
 		};
 

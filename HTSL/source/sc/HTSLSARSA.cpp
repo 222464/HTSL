@@ -74,7 +74,7 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 
 			actionNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < actionNode._firstHiddenConnections.size(); ci++)
 				actionNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -130,7 +130,7 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 
 			qNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < qNode._firstHiddenConnections.size(); ci++)
 				qNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -152,7 +152,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 	for (int ni = 0; ni < _actionNodes.size(); ni++)
 		_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._output);
 
-	_htsl.updateLinearFirstLayer();
+	_htsl.updateUnboundedFirstLayer();
 	_htsl.learnRSC();
 	_htsl.learnPrediction();
 

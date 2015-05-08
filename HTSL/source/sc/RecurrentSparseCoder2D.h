@@ -26,11 +26,17 @@ misrepresented as being the original software.
 
 namespace sc {
 	class RecurrentSparseCoder2D {
+	public:
+		static float sigmoid(float x) {
+			return 1.0f / (1.0f + std::exp(-x));
+		}
+
 	private:
 		struct VisibleConnection {
 			unsigned short _index;
 
 			float _weight;
+			float _weightBiased;
 
 			float _falloff;
 
@@ -67,20 +73,23 @@ namespace sc {
 
 			float _state;
 			float _statePrev;
+			float _bit;
+			float _bitPrev;
 			float _activation;
 			float _reconstruction; // From recurrent connections
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _activation(0.0f), _reconstruction(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _activation(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
 		struct VisibleNode {
 			float _input;
 			float _reconstruction;
+			float _reconstructionBiased;
 
 			VisibleNode()
-				: _input(0.0f), _reconstruction(0.0f)
+				: _input(0.0f), _reconstruction(0.0f), _reconstructionBiased(0.0f)
 			{}
 		};
 
@@ -98,7 +107,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity);
+		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
@@ -133,12 +142,12 @@ namespace sc {
 			return _hidden[x + y * _hiddenWidth]._state;
 		}
 
-		void setHiddenState(int index, float state) {
-			_hidden[index]._state = state;
+		float getHiddenBit(int index) const {
+			return _hidden[index]._bit;
 		}
 
-		void setHiddenState(int x, int y, float state) {
-			_hidden[x + y * _hiddenWidth]._state = state;
+		float getHiddenBit(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._bit;
 		}
 
 		float getHiddenStatePrev(int index) const {
@@ -147,6 +156,14 @@ namespace sc {
 
 		float getHiddenStatePrev(int x, int y) const {
 			return _hidden[x + y * _hiddenWidth]._statePrev;
+		}
+
+		float getHiddenBitPrev(int index) const {
+			return _hidden[index]._bitPrev;
+		}
+
+		float getHiddenBitPrev(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._bitPrev;
 		}
 
 		int getNumVisible() const {

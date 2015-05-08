@@ -74,7 +74,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 
 			actionNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < actionNode._firstHiddenConnections.size(); ci++)
 				actionNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -130,7 +130,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 
 			pvNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < pvNode._firstHiddenConnections.size(); ci++)
 				pvNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -186,7 +186,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 
 			lvNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
 				lvNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -242,7 +242,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 
 			lvNode._firstHiddenConnections.shrink_to_fit();
 
-			float normMult = 1.0f / dist2;
+			float normMult = 1.0f / std::sqrt(dist2);
 
 			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
 				lvNode._firstHiddenConnections[ci]._weight *= normMult;
@@ -257,7 +257,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 	_htsl.createRandom(inputWidth, inputHeight, layerDescs, generator);
 }
 
-void HTSLPVLV::update(float reward, std::mt19937 &generator, bool linearFirstLayer) {
+void HTSLPVLV::update(float reward, std::mt19937 &generator, bool unboundedFirstLayer) {
 	float targetP = _expectedReward + _expectedAlpha * (reward - _expectedReward);
 
 	for (int ni = 0; ni < _pvNodes.size(); ni++)
@@ -307,8 +307,8 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator, bool linearFirstLay
 	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 	std::normal_distribution<float> perturbationDist(0.0f, _actionPerturbationStdDev);
 
-	if (linearFirstLayer)
-		_htsl.updateLinearFirstLayer();
+	if (unboundedFirstLayer)
+		_htsl.updateUnboundedFirstLayer();
 	else
 		_htsl.update();
 

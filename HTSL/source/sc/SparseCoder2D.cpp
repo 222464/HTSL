@@ -165,7 +165,7 @@ void SparseCoder2D::activate() {
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
 			sum += _hidden[hi]._hiddenHiddenConnections[ci]._weight * _hidden[hi]._hiddenHiddenConnections[ci]._falloff * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
 
-		_hidden[hi]._state = sum > 0.0f ? 1.0f : 0.0f;// std::max(0.0f, sum);
+		_hidden[hi]._state = std::max(0.0f, sum);
 	}
 }
 
@@ -192,7 +192,7 @@ void SparseCoder2D::learn(float alpha, float beta, float gamma, float delta, flo
 		float bitPrev = _hidden[hi]._statePrev > 0.0f ? 1.0f : 0.0f;
 
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-			_hidden[hi]._visibleHiddenConnections[ci]._weight += beta * bit * (visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] + delta * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input);
+			_hidden[hi]._visibleHiddenConnections[ci]._weight += beta * (bit - _hidden[hi]._error * delta) * (_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input);
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++) {
 			if (_hidden[hi]._hiddenHiddenConnections[ci]._index == hi)
@@ -201,7 +201,7 @@ void SparseCoder2D::learn(float alpha, float beta, float gamma, float delta, flo
 				_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * ((_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._state > 0.0f ? 1.0f : 0.0f) * bit - sparsitySquared));
 		}
 
-		_hidden[hi]._bias += gamma * (bit - sparsity);
+		_hidden[hi]._bias += gamma * _hidden[hi]._activation;
 	}
 }
 

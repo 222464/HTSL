@@ -21,18 +21,16 @@ namespace sc {
 			float _rscBetaVisible;
 			float _rscBetaHidden;
 			float _rscGamma;
-			float _rscDeltaVisible;
-			float _rscDeltaHidden;
 
 			float _predictionAlpha;
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(6), _inhibitionRadius(5), _recurrentRadius(6),
-				_feedbackRadius(6), _lateralRadius(6),
-				_sparsity(2.0f / 121.0f), 
-				_rscAlpha(0.1f), _rscBetaVisible(0.01f), _rscBetaHidden(0.01f), _rscGamma(0.002f), _rscDeltaVisible(0.5f), _rscDeltaHidden(0.5f),
-				_predictionAlpha(0.1f)
+				_receptiveRadius(5), _inhibitionRadius(5), _recurrentRadius(5),
+				_feedbackRadius(5), _lateralRadius(5),
+				_sparsity(3.0f / 121.0f), 
+				_rscAlpha(0.05f), _rscBetaVisible(0.01f), _rscBetaHidden(0.01f), _rscGamma(0.05f),
+				_predictionAlpha(0.05f)
 			{}
 		};
 
@@ -93,7 +91,7 @@ namespace sc {
 		}
 
 		void update();
-		void updateLinearFirstLayer();
+		void updateUnboundedFirstLayer();
 		void learnRSC();
 		void learnPrediction();
 		void stepEnd();

@@ -5,7 +5,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-#include "sc/SparseCoder2D.h"
+#include "sc/RecurrentSparseCoder2D.h"
 
 int main() {
 	std::mt19937 generator(time(nullptr));
@@ -14,22 +14,22 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 16;
-	const int codeHeight = 16;
-	const float learnAlpha = 0.2f;
-	const float learnBeta = 0.001f;
-	const float learnGamma = 0.2f;
-	const float learnDelta = 2.0f;
+	const int codeWidth = 32;
+	const int codeHeight = 32;
+	const float learnAlpha = 0.05f;
+	const float learnBeta = 0.01f;
+	const float learnGamma = 0.05f;
+	const float learnDelta = 0.1f;
 	const float decay = 0.005f;
-	const float sparsity = 0.01f;
+	const float sparsity = 0.02f;
 
 	const int stepsPerFrame = 8;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
-	sc::SparseCoder2D sparseCoder;
+	sc::RecurrentSparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 10, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, 6, 8, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -97,7 +97,7 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(learnAlpha, learnBeta, learnGamma, learnDelta, decay, sparsity);
+			sparseCoder.learn(learnAlpha, learnBeta, learnBeta, learnGamma, learnDelta, learnDelta, sparsity);
 
 			sparseCoder.stepEnd();
 		}

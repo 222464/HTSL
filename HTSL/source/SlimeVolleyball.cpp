@@ -6,6 +6,7 @@
 #include <SFML/Graphics.hpp>
 
 #include <sc/HTSLPVLV.h>
+#include <sc/HTSLSARSA.h>
 
 struct PhyObj {
 	sf::Vector2f _position;
@@ -48,11 +49,37 @@ int main() {
 	for (int i = 18; i < 20; i++)
 		inputTypes[i] = sc::HTSLPVLV::_lvi;
 
+	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
+
+	layerDescs[0]._width = 32;
+	layerDescs[0]._height = 32;
+	layerDescs[0]._predictionAlpha = 0.005f;
+
+	layerDescs[1]._width = 16;
+	layerDescs[1]._height = 16;
+
+	//layerDescs[2]._width = 8;
+	//layerDescs[2]._height = 8;
+
+	agentBlue.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
+	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
+
+	/*std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
+
+	for (int i = 0; i < 12; i++)
+		inputTypes[i] = sc::HTSLSARSA::_state;
+
+	for (int i = 12; i < 14; i++)
+		inputTypes[i] = sc::HTSLSARSA::_action;
+
+	for (int i = 14; i < 16; i++)
+		inputTypes[i] = sc::HTSLSARSA::_q;
+
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
 	layerDescs[0]._width = 24;
 	layerDescs[0]._height = 24;
-	layerDescs[0]._predictionAlpha = 0.01f;
+	layerDescs[0]._predictionAlpha = 0.001f;
 
 	layerDescs[1]._width = 16;
 	layerDescs[1]._height = 16;
@@ -61,7 +88,7 @@ int main() {
 	layerDescs[2]._height = 8;
 
 	agentBlue.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
-	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
+	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);*/
 
 	// --------------------------------- Game Init -----------------------------------
 
@@ -146,6 +173,9 @@ int main() {
 
 		// ---------------------------------- Physics ----------------------------------
 
+		bool blueBounced = false;
+		bool redBounced = false;
+
 		// Ball
 		{
 			ball._velocity.y += gravity * dt;
@@ -217,6 +247,8 @@ int main() {
 					ball._velocity = blue._velocity + (magnitude > slimeBounce ? reflectedVelocity : normalizedReflected * slimeBounce);
 
 					ball._position = blue._position + normal * (wallRadius + slimeRadius);
+
+					blueBounced = true;
 				}
 			}
 
@@ -239,6 +271,8 @@ int main() {
 					ball._velocity = red._velocity + (magnitude > slimeBounce ? reflectedVelocity : normalizedReflected * slimeBounce);
 
 					ball._position = red._position + normal * (wallRadius + slimeRadius);
+
+					redBounced = true;
 				}
 			}
 
@@ -295,7 +329,7 @@ int main() {
 
 		// Blue slime
 		{
-			const float scalar = 0.002f;
+			const float scalar = 0.01f;
 			// Percepts
 			std::vector<float> inputs(12);
 
@@ -325,7 +359,13 @@ int main() {
 			if (reward != 0.5f)
 				reward = reward > 0.5f ? 1.0f : 0.0f;
 
+			if (blueBounced)
+				reward = std::max(reward, 0.55f);
+
+			//reward *= 0.01f;
+
 			agentBlue.update(reward, generator, true);
+			//agentBlue.update(reward, generator);
 
 			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
 			bool jump = agentBlue.getActionFromNodeIndex(1) > 0.5f;
@@ -364,18 +404,18 @@ int main() {
 
 		// Red slime
 		{
-			const float scalar = 0.002f;
+			const float scalar = 0.01f;
 			// Percepts
 			std::vector<float> inputs(12);
 
 			int index = 0;
 
-			inputs[index++] = (ball._position.x - blue._position.x) * scalar;
-			inputs[index++] = (ball._position.y - blue._position.y) * scalar;
+			inputs[index++] = (ball._position.x - red._position.x) * scalar;
+			inputs[index++] = (ball._position.y - red._position.y) * scalar;
 			inputs[index++] = ball._velocity.x * scalar;
 			inputs[index++] = ball._velocity.y * scalar;
-			inputs[index++] = (red._position.x - blue._position.x) * scalar;
-			inputs[index++] = (red._position.y - blue._position.y) * scalar;
+			inputs[index++] = (blue._position.x - red._position.x) * scalar;
+			inputs[index++] = (blue._position.y - red._position.y) * scalar;
 			inputs[index++] = red._velocity.x * scalar;
 			inputs[index++] = red._velocity.y * scalar;
 			inputs[index++] = blue._position.x * scalar;
@@ -394,7 +434,13 @@ int main() {
 			if (reward != 0.5f)
 				reward = reward > 0.5f ? 1.0f : 0.0f;
 
+			if (redBounced)
+				reward = std::max(reward, 0.55f);
+
+			//reward *= 0.01f;
+
 			agentRed.update(reward, generator, true);
+			//agentRed.update(reward, generator);
 
 			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
 			bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
@@ -600,6 +646,22 @@ int main() {
 
 				renderWindow.draw(sdrs);	
 			}
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)) {
+			sf::Vector2f position;
+
+			const float scalar = 1.0f / 0.01f;
+
+			position.x = red._position.x + scalar * agentRed.getHTSL().getPrediction(0);
+			position.y = red._position.y + scalar * agentRed.getHTSL().getPrediction(1);
+
+			sf::Sprite s;
+			s.setTexture(ballTexture);
+			s.setOrigin(ballTexture.getSize().x * 0.5f, ballTexture.getSize().y * 0.5f);
+			s.setPosition(position);
+
+			renderWindow.draw(s);
 		}
 		
 		renderWindow.display();
