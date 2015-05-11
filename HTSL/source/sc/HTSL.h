@@ -26,8 +26,9 @@ namespace sc {
 			float _rscDeltaVisible;
 			float _rscDeltaHidden;
 
-			float _groupAlphaMin;
-			float _groupAlphaMax;
+			float _preferBetaVisible;
+			float _preferBetaHidden;
+
 			float _nodeAlphaLateral;
 			float _nodeAlphaFeedback;
 
@@ -39,7 +40,8 @@ namespace sc {
 				_feedbackRadius(12), _lateralRadius(12), _predictionGroupSize(4),
 				_sparsity(10.0f / 121.0f), 
 				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_groupAlphaMin(0.01f), _groupAlphaMax(0.99f), _nodeAlphaLateral(0.01f), _nodeAlphaFeedback(0.02f), _nodeBiasAlpha(0.02f)
+				_preferBetaVisible(0.5f), _preferBetaHidden(0.5f),
+				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.2f), _nodeBiasAlpha(0.02f)
 			{}
 		};
 
@@ -68,32 +70,17 @@ namespace sc {
 
 			float _bias;
 
+			float _error;
+
 			PredictionNode()
-				: _state(0.0f), _statePrev(0.0f), _bias(0.0f)
-			{}
-		};
-
-		struct PredictionGroup {
-			std::vector<PredictionNode> _predictionNodes;
-
-			float _state;
-			float _statePrev;
-
-			float _bit;
-			float _bitPrev;
-
-			int _maxIndex;
-			int _maxIndexPrev;
-
-			PredictionGroup()
-				: _state(0.0f), _statePrev(0.0f), _maxIndex(0), _maxIndexPrev(0)
+				: _state(0.0f), _statePrev(0.0f), _bias(0.0f), _error(0.0f)
 			{}
 		};
 
 		struct Layer {
 			RecurrentSparseCoder2D _rsc;
 
-			std::vector<PredictionGroup> _predictionGroups;
+			std::vector<PredictionNode> _predictionNodes;
 		};
 
 		std::vector<LayerDesc> _layerDescs;
@@ -119,16 +106,17 @@ namespace sc {
 		}
 
 		float getPrediction(int index) const {
-			return _layers.front()._predictionGroups[index]._state;
+			return _layers.front()._predictionNodes[index]._state;
 		}
 
 		float getPrediction(int x, int y) const {
-			return _layers.front()._predictionGroups[x + y * _inputWidth]._state;
+			return _layers.front()._predictionNodes[x + y * _inputWidth]._state;
 		}
 
 		void update();
+		void updateUnboundedInput();
 		void learnRSC();
-		void learnPrediction(float importance = 1.0f);
+		void learnPrediction();
 		void stepEnd();
 
 		const std::vector<LayerDesc> &getLayerDescs() const {
