@@ -51,9 +51,8 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 32;
-	layerDescs[0]._height = 32;
-	layerDescs[0]._predictionAlpha = 0.005f;
+	layerDescs[0]._width = 26;
+	layerDescs[0]._height = 26;
 
 	layerDescs[1]._width = 16;
 	layerDescs[1]._height = 16;
@@ -64,7 +63,10 @@ int main() {
 	agentBlue.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
 	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
 
-	/*std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
+	/*sc::HTSLSARSA agentBlue;
+	sc::HTSLSARSA agentRed;
+
+	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
 
 	for (int i = 0; i < 12; i++)
 		inputTypes[i] = sc::HTSLSARSA::_state;
@@ -364,7 +366,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentBlue.update(reward, generator, true);
+			agentBlue.update(reward, generator);
 			//agentBlue.update(reward, generator);
 
 			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
@@ -439,7 +441,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentRed.update(reward, generator, true);
+			agentRed.update(reward, generator);
 			//agentRed.update(reward, generator);
 
 			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;

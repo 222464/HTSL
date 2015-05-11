@@ -118,7 +118,7 @@ int main() {
 
 	int squareDim = std::ceil(std::sqrt(static_cast<float>(usedNotes.size())));
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
+	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
 	layerDescs[0]._width = 16;
 	layerDescs[0]._height = 16;
@@ -126,13 +126,10 @@ int main() {
 	layerDescs[1]._width = 12;
 	layerDescs[1]._height = 12;
 
-	layerDescs[2]._width = 8;
-	layerDescs[2]._height = 8;
-
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 100; loop++) {
+	for (int loop = 0; loop < 200; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 

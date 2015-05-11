@@ -159,7 +159,6 @@ int main() {
 
 	layerDescs[0]._width = 64;
 	layerDescs[0]._height = 64;
-	layerDescs[0]._predictionAlpha = 0.01f;
 
 	layerDescs[1]._width = 48;
 	layerDescs[1]._height = 48;

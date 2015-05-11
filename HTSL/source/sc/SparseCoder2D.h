@@ -26,6 +26,11 @@ misrepresented as being the original software.
 
 namespace sc {
 	class SparseCoder2D {
+	public:
+		float sigmoid(float x) {
+			return 1.0f / (1.0f + std::exp(-x));
+		}
+		
 	private:
 		struct VisibleConnection {
 			unsigned short _index;
@@ -66,11 +71,12 @@ namespace sc {
 
 			float _state;
 			float _statePrev;
-			float _error;
+			float _bit;
+			float _bitPrev;
 			float _activation;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _error(0.0f), _activation(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _activation(0.0f)
 			{}
 		};
 
@@ -96,7 +102,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float beta, float gamma, float delta, float decay, float sparsity);
+		void learn(float alpha, float beta, float gamma, float delta, float sparsity);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {

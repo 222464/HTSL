@@ -30,13 +30,11 @@ namespace sc {
 		static float sigmoid(float x) {
 			return 1.0f / (1.0f + std::exp(-x));
 		}
-
 	private:
 		struct VisibleConnection {
 			unsigned short _index;
 
 			float _weight;
-			float _weightBiased;
 
 			float _falloff;
 
@@ -75,21 +73,21 @@ namespace sc {
 			float _statePrev;
 			float _bit;
 			float _bitPrev;
+			float _error;
 			float _activation;
 			float _reconstruction; // From recurrent connections
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _activation(0.0f), _reconstruction(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
 		struct VisibleNode {
 			float _input;
 			float _reconstruction;
-			float _reconstructionBiased;
 
 			VisibleNode()
-				: _input(0.0f), _reconstruction(0.0f), _reconstructionBiased(0.0f)
+				: _input(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
@@ -107,7 +105,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity);
+		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
@@ -142,20 +140,20 @@ namespace sc {
 			return _hidden[x + y * _hiddenWidth]._state;
 		}
 
-		float getHiddenBit(int index) const {
-			return _hidden[index]._bit;
-		}
-
-		float getHiddenBit(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._bit;
-		}
-
 		float getHiddenStatePrev(int index) const {
 			return _hidden[index]._statePrev;
 		}
 
 		float getHiddenStatePrev(int x, int y) const {
 			return _hidden[x + y * _hiddenWidth]._statePrev;
+		}
+
+		float getHiddenBit(int index) const {
+			return _hidden[index]._bit;
+		}
+
+		float getHiddenBit(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._bit;
 		}
 
 		float getHiddenBitPrev(int index) const {

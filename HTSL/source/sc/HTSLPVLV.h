@@ -62,7 +62,7 @@ namespace sc {
 
 		HTSLPVLV()
 			: _prevValue(0.0f), _expectedReward(0.0f), _expectedSecondaryE(0.0f), _expectedSecondaryI(0.0f), _actionRandomizeChance(0.1f), _actionPerturbationStdDev(0.1f),
-			_expectedAlpha(1.0f), _secondaryAlphaE(1.0f), _secondaryAlphaI(0.1f), _thetaMin(0.48f), _thetaMax(0.52f)
+			_expectedAlpha(1.0f), _secondaryAlphaE(1.0f), _secondaryAlphaI(0.1f), _thetaMin(0.2f), _thetaMax(0.8f)
 		{}
 
 		void createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator);
@@ -105,7 +105,7 @@ namespace sc {
 			return _lviNodes[nodeIndex]._state;
 		}
 
-		void update(float reward, std::mt19937 &generator, bool unboundedFirstLayer = false);
+		void update(float reward, std::mt19937 &generator);
 
 		const HTSL &getHTSL() const {
 			return _htsl;

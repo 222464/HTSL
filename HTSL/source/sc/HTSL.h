@@ -15,22 +15,32 @@ namespace sc {
 			int _feedbackRadius;
 			int _lateralRadius;
 
+			int _predictionGroupSize;
+
 			float _sparsity;
 
 			float _rscAlpha;
 			float _rscBetaVisible;
 			float _rscBetaHidden;
 			float _rscGamma;
+			float _rscDeltaVisible;
+			float _rscDeltaHidden;
 
-			float _predictionAlpha;
-
+			float _groupAlpha;
+			float _nodeAlphaLateral;
+			float _nodeAlphaFeedback;
+			float _nodeLeak;
+			float _nodeBiasAlpha;
+			float _nodeUseDecay;
+			float _nodeUseIncrement;
+	
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(5), _inhibitionRadius(5), _recurrentRadius(5),
-				_feedbackRadius(5), _lateralRadius(5),
-				_sparsity(3.0f / 121.0f), 
-				_rscAlpha(0.05f), _rscBetaVisible(0.01f), _rscBetaHidden(0.01f), _rscGamma(0.05f),
-				_predictionAlpha(0.05f)
+				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
+				_feedbackRadius(6), _lateralRadius(6), _predictionGroupSize(5),
+				_sparsity(1.0f / 121.0f), 
+				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
+				_groupAlpha(0.99f), _nodeAlphaLateral(0.005f), _nodeAlphaFeedback(0.01f), _nodeLeak(0.01f), _nodeBiasAlpha(0.01f), _nodeUseDecay(0.02f), _nodeUseIncrement(0.1f)
 			{}
 		};
 
@@ -55,15 +65,33 @@ namespace sc {
 			float _state;
 			float _statePrev;
 
+			float _weight;
+
+			float _usage;
+
 			PredictionNode()
-				: _state(0.0f), _statePrev(0.0f), _bias(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _bias(1.0f), _usage(1.0f)
+			{}
+		};
+
+		struct PredictionGroup {
+			std::vector<PredictionNode> _predictionNodes;
+
+			float _state;
+			float _statePrev;
+
+			int _maxIndex;
+			int _maxIndexPrev;
+
+			PredictionGroup()
+				: _state(0.0f), _statePrev(0.0f), _maxIndex(0), _maxIndexPrev(0)
 			{}
 		};
 
 		struct Layer {
 			RecurrentSparseCoder2D _rsc;
 
-			std::vector<PredictionNode> _predictionNodes;
+			std::vector<PredictionGroup> _predictionGroups;
 		};
 
 		std::vector<LayerDesc> _layerDescs;
@@ -72,6 +100,12 @@ namespace sc {
 		int _inputWidth, _inputHeight;
 
 	public:
+		int _updateIterations;
+
+
+		HTSL()
+		{}
+
 		void createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, std::mt19937 &generator);
 
 		void setInput(int index, float value) {
@@ -83,15 +117,14 @@ namespace sc {
 		}
 
 		float getPrediction(int index) const {
-			return _layers.front()._predictionNodes[index]._state;
+			return _layers.front()._predictionGroups[index]._state;
 		}
 
 		float getPrediction(int x, int y) const {
-			return _layers.front()._predictionNodes[x + y * _inputWidth]._state;
+			return _layers.front()._predictionGroups[x + y * _inputWidth]._state;
 		}
 
 		void update();
-		void updateUnboundedFirstLayer();
 		void learnRSC();
 		void learnPrediction();
 		void stepEnd();

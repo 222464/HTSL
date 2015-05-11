@@ -14,14 +14,13 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 32;
-	const int codeHeight = 32;
+	const int codeWidth = 24;
+	const int codeHeight = 24;
 	const float learnAlpha = 0.05f;
 	const float learnBeta = 0.01f;
 	const float learnGamma = 0.05f;
-	const float learnDelta = 0.1f;
-	const float decay = 0.005f;
-	const float sparsity = 0.02f;
+	const float learnDelta = 0.0f;
+	const float sparsity = 0.05f;
 
 	const int stepsPerFrame = 8;
 
@@ -29,7 +28,7 @@ int main() {
 
 	sc::RecurrentSparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, 6, 8, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 6, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -120,8 +119,6 @@ int main() {
 						}
 
 					sparseCoder.activate();
-
-					sparseCoder.reconstruct();
 
 					inputIndex = 0;
 
@@ -216,7 +213,7 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				if (sparseCoder.getHiddenState(sx + sy * codeWidth) > 0.0f) {
+				if (sparseCoder.getHiddenBit(sx + sy * codeWidth) > 0.0f) {
 					sf::RectangleShape rs;
 
 					rs.setPosition(sx * dim * scale, sy * dim * scale);
