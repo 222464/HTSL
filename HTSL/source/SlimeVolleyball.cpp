@@ -53,6 +53,9 @@ int main() {
 
 	layerDescs[0]._width = 26;
 	layerDescs[0]._height = 26;
+	layerDescs[0]._nodeAlphaFeedback = 0.05f;
+	layerDescs[0]._nodeAlphaLateral = 0.05f;
+	layerDescs[0]._nodeBiasAlpha = 0.05f;
 
 	layerDescs[1]._width = 16;
 	layerDescs[1]._height = 16;
@@ -331,7 +334,7 @@ int main() {
 
 		// Blue slime
 		{
-			const float scalar = 0.01f;
+			const float scalar = 0.001f;
 			// Percepts
 			std::vector<float> inputs(12);
 
@@ -366,7 +369,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentBlue.update(reward, generator);
+			agentBlue.update(reward, generator, true);
 			//agentBlue.update(reward, generator);
 
 			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
@@ -406,7 +409,7 @@ int main() {
 
 		// Red slime
 		{
-			const float scalar = 0.01f;
+			const float scalar = 0.001f;
 			// Percepts
 			std::vector<float> inputs(12);
 
@@ -441,7 +444,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentRed.update(reward, generator);
+			agentRed.update(reward, generator, true);
 			//agentRed.update(reward, generator);
 
 			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
@@ -653,7 +656,7 @@ int main() {
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)) {
 			sf::Vector2f position;
 
-			const float scalar = 1.0f / 0.01f;
+			const float scalar = 1.0f / 0.001f;
 
 			position.x = red._position.x + scalar * agentRed.getHTSL().getPrediction(0);
 			position.y = red._position.y + scalar * agentRed.getHTSL().getPrediction(1);

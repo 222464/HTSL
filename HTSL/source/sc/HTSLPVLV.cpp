@@ -313,7 +313,7 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator, bool unboundedInput
 		_htsl.update();
 
 	_htsl.learnRSC();
-	_htsl.learnPrediction();
+	_htsl.learnPrediction(std::abs(reward - 0.5f) * 2.0f);
 
 	// Collect expected reward
 	float pvSum = 0.0f;
@@ -350,11 +350,11 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator, bool unboundedInput
 			_actionNodes[ni]._output = std::min(1.0f, std::max(0.0f, std::min(1.0f, std::max(0.0f, _actionNodes[ni]._state)) + perturbationDist(generator)));
 	}
 
+	std::cout << reward << " " << _expectedReward << " " << _expectedSecondaryE << " " << _expectedSecondaryI << " " << error << " " << (pvFilter ? "F" : "N") << std::endl;
+
 	_expectedReward = expectedReward;
 	_expectedSecondaryE = expectedSecondaryE;
 	_expectedSecondaryI = expectedSecondaryI;
-
-	std::cout << reward << " " << _expectedReward << " " << _expectedSecondaryE << " " << _expectedSecondaryI << " " << error << " " << (pvFilter ? "F" : "N") << std::endl;
 
 	_htsl.stepEnd();
 }

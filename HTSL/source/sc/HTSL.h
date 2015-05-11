@@ -39,9 +39,9 @@ namespace sc {
 				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
 				_feedbackRadius(6), _lateralRadius(6),
 				_sparsity(1.0f / 121.0f), 
-				_rscAlpha(0.5f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_preferBetaVisible(0.05f), _preferBetaHidden(0.05f), _errorPropagationDecay(0.5f),
-				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.2f), _nodeBiasAlpha(0.1f)
+				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
+				_preferBetaVisible(0.1f), _preferBetaHidden(0.1f), _errorPropagationDecay(0.5f),
+				_nodeAlphaLateral(0.2f), _nodeAlphaFeedback(0.4f), _nodeBiasAlpha(0.1f)
 			{}
 		};
 
@@ -116,7 +116,7 @@ namespace sc {
 		void update();
 		void updateUnboundedInput();
 		void learnRSC();
-		void learnPrediction();
+		void learnPrediction(float importance = 1.0f);
 		void stepEnd();
 
 		const std::vector<LayerDesc> &getLayerDescs() const {

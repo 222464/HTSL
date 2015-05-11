@@ -121,7 +121,7 @@ void HTSL::update() {
 			int prevLayerIndex = l - 1;
 
 			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
-				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenBit(vi));
+				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
 		}
 
 		_layers[l]._rsc.activate();
@@ -149,7 +149,7 @@ void HTSL::update() {
 				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
@@ -167,7 +167,7 @@ void HTSL::updateUnboundedInput() {
 			int prevLayerIndex = l - 1;
 
 			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
-				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenBit(vi));
+				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
 		}
 
 		_layers[l]._rsc.activate();
@@ -195,7 +195,7 @@ void HTSL::updateUnboundedInput() {
 				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
@@ -210,7 +210,7 @@ void HTSL::updateUnboundedInput() {
 				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
@@ -226,7 +226,7 @@ void HTSL::learnRSC() {
 		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._sparsity);
 }
 
-void HTSL::learnPrediction() {
+void HTSL::learnPrediction(float importance) {
 	for (int l = 0; l < _layers.size(); l++) {
 		_layers[l]._rsc.zeroPreferences();
 
@@ -247,7 +247,7 @@ void HTSL::learnPrediction() {
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++) {
 					_layers[l]._rsc.setHiddenPreference(node._lateralConnections[ci]._index, _layers[l]._rsc.getHiddenPreference(node._lateralConnections[ci]._index) + _layerDescs[l]._errorPropagationDecay * node._error * node._lateralConnections[ci]._weight);
 
-					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
 				}
 			}
 		}
@@ -260,7 +260,7 @@ void HTSL::learnPrediction() {
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++) {
 					_layers[l]._rsc.setHiddenPreference(node._lateralConnections[ci]._index, _layers[l]._rsc.getHiddenPreference(node._lateralConnections[ci]._index) + _layerDescs[l]._errorPropagationDecay * node._error * node._lateralConnections[ci]._weight);
 
-					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
 				}
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++) {
@@ -273,7 +273,7 @@ void HTSL::learnPrediction() {
 	}
 
 	for (int l = 0; l < _layers.size(); l++)
-		_layers[l]._rsc.preferBasedOnPrev(_layerDescs[l]._preferBetaVisible, _layerDescs[l]._preferBetaHidden);
+		_layers[l]._rsc.preferBasedOnPrev(_layerDescs[l]._preferBetaVisible * importance, _layerDescs[l]._preferBetaHidden * importance);
 }
 
 void HTSL::stepEnd() {

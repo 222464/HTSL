@@ -16,8 +16,8 @@ int main() {
 	const int sampleHeight = 32;
 	const int codeWidth = 24;
 	const int codeHeight = 24;
-	const float learnAlpha = 0.05f;
-	const float learnBeta = 0.01f;
+	const float learnAlpha = 0.2f;
+	const float learnBeta = 0.05f;
 	const float learnGamma = 0.05f;
 	const float learnDelta = 0.0f;
 	const float sparsity = 0.05f;
