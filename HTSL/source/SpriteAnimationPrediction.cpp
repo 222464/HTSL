@@ -143,15 +143,15 @@ int main() {
 
 	//generateCountSequence();
 
-	const int frameWidth = 32;
-	const int frameHeight = 32;
-	const int numFrames = 40;
+	const int frameWidth = 34;
+	const int frameHeight = 60;
+	const int numFrames = 50;
 
 	//FileAnimation animation;
 	//animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
 
 	Animation animation;
-	animation.loadFromFile("resources/numberSequence.png");
+	animation.loadFromFile("resources/animation.png");
 
 	sc::HTSL htsl;
 

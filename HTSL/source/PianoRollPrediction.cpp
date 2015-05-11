@@ -118,7 +118,7 @@ int main() {
 
 	int squareDim = std::ceil(std::sqrt(static_cast<float>(usedNotes.size())));
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
+	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
 	layerDescs[0]._width = 16;
 	layerDescs[0]._height = 16;
@@ -126,10 +126,13 @@ int main() {
 	layerDescs[1]._width = 12;
 	layerDescs[1]._height = 12;
 
+	layerDescs[2]._width = 8;
+	layerDescs[2]._height = 8;
+
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 200; loop++) {
+	for (int loop = 0; loop < 100; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
@@ -140,7 +143,8 @@ int main() {
 				htsl.setInput(noteToInput[frame._notes[n]], 1.0f);
 			
 			htsl.update();
-			htsl.learnRSC();
+
+			//htsl.learnRSC();
 			htsl.learnPrediction();
 			htsl.stepEnd();
 		}
@@ -177,13 +181,13 @@ int main() {
 
 		htsl.update();
 
-		/*for (int x = 0; x < 12; x++) {
-			for (int y = 0; y < 12; y++) {
-				std::cout << htsl.getLayers().front()._rsc.getHiddenState(x, y) << " ";
+		for (int x = 0; x < 16; x++) {
+			for (int y = 0; y < 16; y++) {
+				std::cout << (htsl.getLayers()[0]._rsc.getHiddenBit(x, y) > 0.5f ? "1" : "0");
 			}
 
 			std::cout << std::endl;
-		}*/
+		}
 
 		std::cout << "Actual: ";
 

@@ -26,21 +26,20 @@ namespace sc {
 			float _rscDeltaVisible;
 			float _rscDeltaHidden;
 
-			float _groupAlpha;
+			float _groupAlphaMin;
+			float _groupAlphaMax;
 			float _nodeAlphaLateral;
 			float _nodeAlphaFeedback;
-			float _nodeLeak;
+
 			float _nodeBiasAlpha;
-			float _nodeUseDecay;
-			float _nodeUseIncrement;
-	
+
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
-				_feedbackRadius(6), _lateralRadius(6), _predictionGroupSize(5),
-				_sparsity(1.0f / 121.0f), 
+				_receptiveRadius(8), _inhibitionRadius(8), _recurrentRadius(8),
+				_feedbackRadius(12), _lateralRadius(12), _predictionGroupSize(4),
+				_sparsity(10.0f / 121.0f), 
 				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_groupAlpha(0.99f), _nodeAlphaLateral(0.005f), _nodeAlphaFeedback(0.01f), _nodeLeak(0.01f), _nodeBiasAlpha(0.01f), _nodeUseDecay(0.02f), _nodeUseIncrement(0.1f)
+				_groupAlphaMin(0.01f), _groupAlphaMax(0.99f), _nodeAlphaLateral(0.01f), _nodeAlphaFeedback(0.02f), _nodeBiasAlpha(0.02f)
 			{}
 		};
 
@@ -60,8 +59,6 @@ namespace sc {
 			std::vector<PredictionConnection> _feedbackConnections;
 			std::vector<PredictionConnection> _lateralConnections;
 
-			float _bias;
-
 			float _state;
 			float _statePrev;
 
@@ -69,8 +66,10 @@ namespace sc {
 
 			float _usage;
 
+			float _bias;
+
 			PredictionNode()
-				: _state(0.0f), _statePrev(0.0f), _bias(1.0f), _usage(1.0f)
+				: _state(0.0f), _statePrev(0.0f), _bias(0.0f)
 			{}
 		};
 
@@ -79,6 +78,9 @@ namespace sc {
 
 			float _state;
 			float _statePrev;
+
+			float _bit;
+			float _bitPrev;
 
 			int _maxIndex;
 			int _maxIndexPrev;
@@ -126,7 +128,7 @@ namespace sc {
 
 		void update();
 		void learnRSC();
-		void learnPrediction();
+		void learnPrediction(float importance = 1.0f);
 		void stepEnd();
 
 		const std::vector<LayerDesc> &getLayerDescs() const {

@@ -40,14 +40,14 @@ void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<Layer
 
 			_layers[l]._predictionGroups[vi]._predictionNodes.resize(_layerDescs[l]._predictionGroupSize);
 
-			float groupDist2 = 0.0f;
+			//float groupDist2 = 0.0f;
 
 			for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++) {
 				PredictionNode &node = _layers[l]._predictionGroups[vi]._predictionNodes[gi];
 
-				node._weight = weightDist(generator) * 2.0f - 1.0f;
+				node._weight = weightDist(generator);
 
-				groupDist2 += node._weight * node._weight;
+				//groupDist2 += node._weight * node._weight;
 
 				node._lateralConnections.reserve(lateralSize);
 
@@ -114,10 +114,10 @@ void HTSL::createRandom(int inputWidth, int inputHeight, const std::vector<Layer
 				}
 			}
 
-			float normFactor = 1.0f / std::sqrt(groupDist2);
+			//float normFactor = 1.0f / std::sqrt(groupDist2);
 
-			for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++)
-				_layers[l]._predictionGroups[vi]._predictionNodes[gi]._weight *= normFactor;
+			//for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++)
+			//	_layers[l]._predictionGroups[vi]._predictionNodes[gi]._weight *= normFactor;
 		}
 
 		prevWidth = _layerDescs[l]._width;
@@ -132,7 +132,7 @@ void HTSL::update() {
 			int prevLayerIndex = l - 1;
 
 			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
-				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
+				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenBit(vi));
 		}
 
 		_layers[l]._rsc.activate();
@@ -149,26 +149,22 @@ void HTSL::update() {
 				for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++) {
 					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[gi];
 
-					float sum = 0.0f;// _layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias;
+					float sum = _layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias;
 
 					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 						sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
-					node._state = sum;
+					node._state = sigmoid(sum);
 
 					if (node._state > maxState) {
 						maxState = node._state;
 						maxIndex = gi;
 					}
-
-					node._usage = (1.0f - _layerDescs[l]._nodeUseDecay) * node._usage;
 				}
 
 				_layers[l]._predictionGroups[ni]._maxIndex = maxIndex;
 
 				_layers[l]._predictionGroups[ni]._state = _layers[l]._predictionGroups[ni]._predictionNodes[maxIndex]._weight;
-
-				_layers[l]._predictionGroups[ni]._predictionNodes[maxIndex]._usage += _layerDescs[l]._nodeUseIncrement;
 			}
 		}
 		else {
@@ -179,29 +175,25 @@ void HTSL::update() {
 				for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++) {
 					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[gi];
 
-					float sum = 0.0f;// _layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias;
+					float sum = _layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias;
 
 					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-						sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+						sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
 
 					for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 						sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionGroups[node._feedbackConnections[ci]._index]._state;
 
-					node._state = sum;
+					node._state = sigmoid(sum);
 
 					if (node._state > maxState) {
 						maxState = node._state;
 						maxIndex = gi;
 					}
-
-					node._usage = (1.0f - _layerDescs[l]._nodeUseDecay) * node._usage;
 				}
 				
 				_layers[l]._predictionGroups[ni]._maxIndex = maxIndex;
 
 				_layers[l]._predictionGroups[ni]._state = _layers[l]._predictionGroups[ni]._predictionNodes[maxIndex]._weight;
-
-				_layers[l]._predictionGroups[ni]._predictionNodes[maxIndex]._usage += _layerDescs[l]._nodeUseIncrement;
 			}
 		}
 	}
@@ -212,17 +204,15 @@ void HTSL::learnRSC() {
 		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._sparsity);
 }
 
-void HTSL::learnPrediction() {
+void HTSL::learnPrediction(float importance) {
 	for (int l = 0; l < _layers.size(); l++) {
 		if (l == _layers.size() - 1) {
 			for (int ni = 0; ni < _layers[l]._predictionGroups.size(); ni++) {
-				//float outputError = _layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight;
-
-				float minError = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[0]._weight) * _layers[l]._predictionGroups[ni]._predictionNodes[0]._usage;
 				int minErrorIndex = 0;
+				float minError = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[0]._weight);
 
 				for (int gi = 1; gi < _layerDescs[l]._predictionGroupSize; gi++) {
-					float error = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight) *_layers[l]._predictionGroups[ni]._predictionNodes[gi]._usage;
+					float error = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
 
 					if (error < minError) {
 						minError = error;
@@ -230,47 +220,36 @@ void HTSL::learnPrediction() {
 					}
 				}
 
-				//_layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight += _layerDescs[l]._groupAlpha * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight);
-				_layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight += _layerDescs[l]._groupAlpha * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight);
+				bool correct = minErrorIndex == _layers[l]._predictionGroups[ni]._maxIndexPrev;
 
-				if (minErrorIndex != _layers[l]._predictionGroups[ni]._maxIndex) {
-					{
-						PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex];
+				if (correct) {
+					_layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight += _layerDescs[l]._groupAlphaMax * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight);
 
-						float state = 1.0f;
+					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex];
 
-						//_layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight += (1.0f - state) * _layerDescs[l]._nodeLeak * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
-
-						_layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize - state);
-
-						for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-							node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
-					}
-
-					{
-						PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndex];
-
-						float state = 0.0f;
-
-						//_layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight += (1.0f - state) * _layerDescs[l]._nodeLeak * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
-
-						_layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndex]._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize - state);
-
-						for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-							node._lateralConnections[ci]._weight += -_layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
-					}
+					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+						node._lateralConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
 				}
+				else {
+					_layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight += _layerDescs[l]._groupAlphaMin * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight);
+
+					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev];
+
+					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+						node._lateralConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaLateral * -_layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
+				}
+
+				for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++)
+					_layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize - (gi == _layers[l]._predictionGroups[ni]._maxIndexPrev ? 1.0f : 0.0f));
 			}
 		}
 		else {
 			for (int ni = 0; ni < _layers[l]._predictionGroups.size(); ni++) {
-				//float outputError = _layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight;
-
-				float minError = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[0]._weight) *_layers[l]._predictionGroups[ni]._predictionNodes[0]._usage;
 				int minErrorIndex = 0;
+				float minError = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[0]._weight);
 
 				for (int gi = 1; gi < _layerDescs[l]._predictionGroupSize; gi++) {
-					float error = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight) * _layers[l]._predictionGroups[ni]._predictionNodes[gi]._usage;
+					float error = std::abs(_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
 
 					if (error < minError) {
 						minError = error;
@@ -278,39 +257,33 @@ void HTSL::learnPrediction() {
 					}
 				}
 
-				//_layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight += _layerDescs[l]._groupAlpha * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight);
-				_layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight += _layerDescs[l]._groupAlpha * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight);
+				bool correct = minErrorIndex == _layers[l]._predictionGroups[ni]._maxIndexPrev;
 
-				if (minErrorIndex != _layers[l]._predictionGroups[ni]._maxIndex) {
-					{
-						PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex];
+				if (correct) {
+					_layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight += _layerDescs[l]._groupAlphaMax * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex]._weight);
 
-						//_layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight += (1.0f - state) * _layerDescs[l]._nodeLeak * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
+					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[minErrorIndex];
 
-						node._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize - 1.0f);
-
-						for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-							node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
-
-						for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
-							node._feedbackConnections[ci]._weight += _layerDescs[l]._nodeAlphaFeedback * _layers[l + 1]._predictionGroups[node._feedbackConnections[ci]._index]._statePrev;
-
-					}
-
-					{
-						PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndex];
-
-						//_layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight += (1.0f - state) * _layerDescs[l]._nodeLeak * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[gi]._weight);
-
-						node._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize);
-
-						for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-							node._lateralConnections[ci]._weight += -_layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
-
-						for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
-							node._feedbackConnections[ci]._weight += -_layerDescs[l]._nodeAlphaFeedback * _layers[l + 1]._predictionGroups[node._feedbackConnections[ci]._index]._statePrev;
-					}
+					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+						node._lateralConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaLateral * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
+				
+					for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
+						node._feedbackConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaFeedback * _layers[l + 1]._predictionGroups[node._feedbackConnections[ci]._index]._statePrev;
 				}
+				else {
+					_layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight += _layerDescs[l]._groupAlphaMin * (_layers[l]._rsc.getVisibleState(ni) - _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev]._weight);
+
+					PredictionNode &node = _layers[l]._predictionGroups[ni]._predictionNodes[_layers[l]._predictionGroups[ni]._maxIndexPrev];
+
+					for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+						node._lateralConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaLateral * -_layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
+				
+					for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
+						node._feedbackConnections[ci]._weight += importance * _layerDescs[l]._nodeAlphaFeedback * -_layers[l + 1]._predictionGroups[node._feedbackConnections[ci]._index]._statePrev;
+				}
+
+				for (int gi = 0; gi < _layerDescs[l]._predictionGroupSize; gi++)
+					_layers[l]._predictionGroups[ni]._predictionNodes[gi]._bias += _layerDescs[l]._nodeBiasAlpha * (1.0f / _layerDescs[l]._predictionGroupSize - (gi == _layers[l]._predictionGroups[ni]._maxIndexPrev ? 1.0f : 0.0f));
 			}
 		}
 	}

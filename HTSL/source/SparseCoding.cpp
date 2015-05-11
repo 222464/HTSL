@@ -120,6 +120,8 @@ int main() {
 
 					sparseCoder.activate();
 
+					sparseCoder.reconstruct();
+
 					inputIndex = 0;
 
 					for (int x = 0; x < sampleWidth; x++)
