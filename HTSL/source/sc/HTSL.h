@@ -15,8 +15,6 @@ namespace sc {
 			int _feedbackRadius;
 			int _lateralRadius;
 
-			int _predictionGroupSize;
-
 			float _sparsity;
 
 			float _rscAlpha;
@@ -29,6 +27,8 @@ namespace sc {
 			float _preferBetaVisible;
 			float _preferBetaHidden;
 
+			float _errorPropagationDecay;
+
 			float _nodeAlphaLateral;
 			float _nodeAlphaFeedback;
 
@@ -36,12 +36,12 @@ namespace sc {
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(8), _inhibitionRadius(8), _recurrentRadius(8),
-				_feedbackRadius(12), _lateralRadius(12), _predictionGroupSize(4),
-				_sparsity(10.0f / 121.0f), 
-				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_preferBetaVisible(0.5f), _preferBetaHidden(0.5f),
-				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.2f), _nodeBiasAlpha(0.02f)
+				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
+				_feedbackRadius(6), _lateralRadius(6),
+				_sparsity(1.0f / 121.0f), 
+				_rscAlpha(0.5f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
+				_preferBetaVisible(0.05f), _preferBetaHidden(0.05f), _errorPropagationDecay(0.5f),
+				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.2f), _nodeBiasAlpha(0.1f)
 			{}
 		};
 
