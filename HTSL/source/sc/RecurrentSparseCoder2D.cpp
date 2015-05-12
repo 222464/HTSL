@@ -211,7 +211,7 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		if (_hidden[hi]._activation < -learnTolerance) {
-			float learn = _hidden[hi]._bit;
+			float learn = _hidden[hi]._bit * (1.0f - _hidden[hi]._bitPrev);
 
 			for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
 				_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * learn * (_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input - _hidden[hi]._visibleHiddenConnections[ci]._weight);
@@ -221,31 +221,16 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._state * _hidden[hi]._state - sparsitySquared));
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * _hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit * _hidden[hi]._bit - sparsitySquared));
 
 		_hidden[hi]._bias += gamma * (_hidden[hi]._bit - sparsity);
 	}
 }
 
-void RecurrentSparseCoder2D::learnAttention(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance) {
-	float sparsitySquared = sparsity * sparsity;
-
+void RecurrentSparseCoder2D::attention(float alpha) {
 	for (int hi = 0; hi < _hidden.size(); hi++) {
-		if (_hidden[hi]._activation < -learnTolerance) {
-			float standardLearn = _hidden[hi]._bitPrev;
-			float attentionLearn = (1.0f - standardLearn) * std::min(1.0f, std::abs(_hidden[hi]._attention));
-
-			for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-				_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * attentionLearn * (_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._inputPrev - _hidden[hi]._visibleHiddenConnections[ci]._weight);
-
-			for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
-				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * attentionLearn * (_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrevPrev - _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight);
-		}
-
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._statePrev * _hidden[hi]._statePrev - sparsitySquared));
-	
-		_hidden[hi]._bias += gamma * (_hidden[hi]._bitPrev - sparsity);
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * _hidden[hi]._attention * _hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bitPrev);
 	}
 }
 

@@ -112,7 +112,7 @@ namespace sc {
 		void activate();
 		void reconstruct();
 		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
-		void learnAttention(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
+		void attention(float alpha);
 		void stepEnd();
 
 		float getRepresentationError() const;

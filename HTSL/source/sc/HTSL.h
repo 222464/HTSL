@@ -29,15 +29,15 @@ namespace sc {
 
 			float _nodeBiasAlpha;
 
-			float _attentionScalar;
+			float _attentionAlpha;
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(8), _inhibitionRadius(6), _recurrentRadius(8),
+				_receptiveRadius(8), _inhibitionRadius(5), _recurrentRadius(8),
 				_feedbackRadius(8), _lateralRadius(8),
-				_sparsity(1.0f / 121.0f), 
-				_rscAlpha(0.4f), _rscBetaVisible(0.2f), _rscBetaHidden(0.2f), _rscGamma(0.02f), _rscLearnTolerance(0.02f), _rscMinLearnTolerance(0.0001f),
-				_nodeAlphaLateral(0.05f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.04f), _attentionScalar(0.0f)
+				_sparsity(10.0f / 121.0f), 
+				_rscAlpha(0.5f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.1f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0001f),
+				_nodeAlphaLateral(0.2f), _nodeAlphaFeedback(0.3f), _nodeBiasAlpha(0.1f), _attentionAlpha(100.0f)
 			{}
 		};
 
@@ -58,6 +58,7 @@ namespace sc {
 			std::vector<PredictionConnection> _lateralConnections;
 
 			float _activation;
+			float _activationPrev;
 			float _state;
 			float _statePrev;
 			float _bit;
@@ -68,7 +69,7 @@ namespace sc {
 			float _error;
 
 			PredictionNode()
-				: _activation(0.0f), _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bias(0.0f), _error(0.0f)
+				: _activation(0.0f), _activationPrev(0.0f), _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bias(0.0f), _error(0.0f)
 			{}
 		};
 

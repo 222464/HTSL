@@ -123,7 +123,7 @@ void HTSL::update() {
 			int prevLayerIndex = l - 1;
 
 			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
-				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
+				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenBit(vi));
 		}
 
 		_layers[l]._rsc.activate();
@@ -140,7 +140,7 @@ void HTSL::update() {
 				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
 
 				node._activation = sum;
 			}
@@ -153,7 +153,7 @@ void HTSL::update() {
 				float sum = node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenBit(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._bit;
@@ -207,7 +207,9 @@ void HTSL::learn(float importance) {
 		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 			PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-			node._error = _layers[l]._rsc.getHiddenState(ni) - node._bitPrev;
+			node._error = _layers[l]._rsc.getHiddenBit(ni) - node._bitPrev;
+
+			_layers[l]._rsc.setAttention(ni, node._error);
 		}
 	}
 
@@ -219,7 +221,7 @@ void HTSL::learn(float importance) {
 				node._bias += _layerDescs[l]._nodeBiasAlpha * node._error;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
 			}
 		}
 		else {
@@ -229,7 +231,7 @@ void HTSL::learn(float importance) {
 				node._bias += _layerDescs[l]._nodeBiasAlpha * node._error;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenStatePrev(node._lateralConnections[ci]._index);
+					node._lateralConnections[ci]._weight += _layerDescs[l]._nodeAlphaLateral * node._error * _layers[l]._rsc.getHiddenBitPrev(node._lateralConnections[ci]._index);
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					node._feedbackConnections[ci]._weight += _layerDescs[l]._nodeAlphaFeedback * node._error * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._bitPrev;
@@ -237,8 +239,10 @@ void HTSL::learn(float importance) {
 		}
 	}
 
-	for (int l = 0; l < _layers.size(); l++)
+	for (int l = 0; l < _layers.size(); l++) {
 		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._sparsity, _layerDescs[l]._rscLearnTolerance);
+		_layers[l]._rsc.attention(_layerDescs[l]._attentionAlpha);
+	}
 }
 
 void HTSL::stepEnd() {
@@ -246,6 +250,7 @@ void HTSL::stepEnd() {
 		_layers[l]._rsc.stepEnd();
 
 		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+			_layers[l]._predictionNodes[ni]._activationPrev = _layers[l]._predictionNodes[ni]._activation;
 			_layers[l]._predictionNodes[ni]._statePrev = _layers[l]._predictionNodes[ni]._state;
 			_layers[l]._predictionNodes[ni]._bitPrev = _layers[l]._predictionNodes[ni]._bit;
 		}
