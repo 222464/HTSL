@@ -43,29 +43,8 @@ namespace sc {
 			{}
 		};
 
-		struct HiddenConnection {
-			unsigned short _index;
-
-			float _weight;
-
-			float _falloff;
-
-			HiddenConnection()
-			{}
-		};
-
-		struct ReconstructionConnection {
-			unsigned short _index;
-			
-			float _weight;
-
-			ReconstructionConnection()
-			{}
-		};
-
 		struct HiddenNode {
 			std::vector<VisibleConnection> _visibleHiddenConnections;
-			std::vector<HiddenConnection> _hiddenHiddenConnections;
 
 			float _bias;
 
@@ -83,27 +62,26 @@ namespace sc {
 		struct VisibleNode {
 			float _input;
 			float _reconstruction;
+			float _error;
 
 			VisibleNode()
-				: _input(0.0f), _reconstruction(0.0f)
+				: _input(0.0f), _reconstruction(0.0f), _error(0.0f)
 			{}
 		};
 
 		int _visibleWidth, _visibleHeight;
 		int _hiddenWidth, _hiddenHeight;
 		int _receptiveRadius;
-		int _inhibitionRadius;
 
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, std::mt19937 &generator);
 
-		void activate();
+		void activate(float sparsity = 0.1f, int iterations = 10, float dt = 0.15f);
 		void reconstruct();
-		void learn(float alpha, float beta, float gamma, float delta, float sparsity);
-		void stepEnd();
+		void learn(float alpha);
 
 		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;
@@ -155,10 +133,6 @@ namespace sc {
 
 		int getReceptiveRadius() const {
 			return _receptiveRadius;
-		}
-
-		int getInhbitionRadius() const {
-			return _inhibitionRadius;
 		}
 
 		float getVHWeight(int hi, int ci) const {

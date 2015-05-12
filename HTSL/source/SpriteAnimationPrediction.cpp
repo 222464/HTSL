@@ -225,8 +225,7 @@ int main() {
 				}
 
 			htsl.update();
-			htsl.learnRSC();
-			htsl.learnPrediction();
+			htsl.learn();
 			htsl.stepEnd();
 		}
 

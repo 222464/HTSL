@@ -53,9 +53,6 @@ int main() {
 
 	layerDescs[0]._width = 26;
 	layerDescs[0]._height = 26;
-	layerDescs[0]._nodeAlphaFeedback = 0.05f;
-	layerDescs[0]._nodeAlphaLateral = 0.05f;
-	layerDescs[0]._nodeBiasAlpha = 0.05f;
 
 	layerDescs[1]._width = 16;
 	layerDescs[1]._height = 16;
@@ -369,7 +366,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentBlue.update(reward, generator, true);
+			agentBlue.update(reward, generator);
 			//agentBlue.update(reward, generator);
 
 			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
@@ -444,7 +441,7 @@ int main() {
 
 			//reward *= 0.01f;
 
-			agentRed.update(reward, generator, true);
+			agentRed.update(reward, generator);
 			//agentRed.update(reward, generator);
 
 			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;

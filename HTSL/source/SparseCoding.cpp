@@ -5,6 +5,8 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
+#include <iostream>
+
 #include "sc/RecurrentSparseCoder2D.h"
 
 int main() {
@@ -14,13 +16,12 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 24;
-	const int codeHeight = 24;
-	const float learnAlpha = 0.2f;
-	const float learnBeta = 0.05f;
-	const float learnGamma = 0.05f;
-	const float learnDelta = 0.0f;
-	const float sparsity = 0.05f;
+	const int codeWidth = 32;
+	const int codeHeight = 32;
+	const float learnAlpha = 0.01f;
+	const float sparsityDecay = 0.1f;
+
+	float sparsity = 1.0f;
 
 	const int stepsPerFrame = 8;
 
@@ -28,7 +29,7 @@ int main() {
 
 	sc::RecurrentSparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 6, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 4, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -58,6 +59,8 @@ int main() {
 	std::uniform_int_distribution<int> widthDist(0, static_cast<int>(sampleImage.getSize().x) - sampleWidth - 1);
 	std::uniform_int_distribution<int> heightDist(0, static_cast<int>(sampleImage.getSize().y) - sampleHeight - 1);
 
+	float dt = 0.017f;
+
 	bool quit = false;
 
 	do {
@@ -75,6 +78,10 @@ int main() {
 			quit = true;
 
 		renderWindow.clear();
+
+		sparsity += -sparsityDecay * sparsity * dt;
+
+		std::cout << sparsity << std::endl;
 
 		// -------------------------- Sparse Coding ----------------------------
 
@@ -96,9 +103,7 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(learnAlpha, learnBeta, learnBeta, learnGamma, learnDelta, learnDelta, sparsity);
-
-			sparseCoder.stepEnd();
+			sparseCoder.learn(0.5f, 0.05f, 0.05f, 0.5f, 0.05f, 0.05f);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
@@ -215,7 +220,7 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				if (sparseCoder.getHiddenBit(sx + sy * codeWidth) > 0.0f) {
+				if (sparseCoder.getHiddenState(sx + sy * codeWidth) > 0.0f) {
 					sf::RectangleShape rs;
 
 					rs.setPosition(sx * dim * scale, sy * dim * scale);

@@ -153,8 +153,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		_htsl.setInput(_actionNodes[ni]._inputIndex, _actionNodes[ni]._output);
 
 	_htsl.update();
-	_htsl.learnRSC();
-	_htsl.learnPrediction();
+	_htsl.learn();
 
 	// Collect Q
 	float qSum = 0.0f;

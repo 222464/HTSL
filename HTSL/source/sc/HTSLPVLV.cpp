@@ -17,8 +17,8 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 
 	int actionQSize = std::pow(actionQRadius * 2 + 1, 2);
 
-	float visibleToHiddenWidth = static_cast<float>(layerDescs.front()._width) / static_cast<float>(inputWidth);
-	float visibleToHiddenHeight = static_cast<float>(layerDescs.front()._height) / static_cast<float>(inputHeight);
+	float visibleToHiddenWidth = static_cast<float>(layerDescs.front()._width - 1) / static_cast<float>(inputWidth - 1);
+	float visibleToHiddenHeight = static_cast<float>(layerDescs.front()._height - 1) / static_cast<float>(inputHeight - 1);
 
 	for (int vi = 0; vi < _inputTypes.size(); vi++) {
 		int vx = vi % inputWidth;
@@ -309,8 +309,7 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 
 	_htsl.update();
 
-	_htsl.learnRSC();
-	_htsl.learnPrediction(std::abs(reward - 0.5f) * 2.0f);
+	_htsl.learn();
 
 	// Collect expected reward
 	float pvSum = 0.0f;

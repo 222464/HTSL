@@ -78,10 +78,11 @@ namespace sc {
 			float _error;
 			float _activation;
 			float _reconstruction; // From recurrent connections
-			float _preference;
+			float _reconstructionPrev; // From recurrent connections
+			float _attention;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _preference(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _attention(0.0f)
 			{}
 		};
 
@@ -89,9 +90,10 @@ namespace sc {
 			float _input;
 			float _inputPrev;
 			float _reconstruction;
+			float _reconstructionPrev;
 
 			VisibleNode()
-				: _input(0.0f), _inputPrev(0.0f), _reconstruction(0.0f)
+				: _input(0.0f), _inputPrev(0.0f), _reconstruction(0.0f), _reconstructionPrev(0.0f)
 			{}
 		};
 
@@ -109,9 +111,11 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity);
-		void preferBasedOnPrev(float alpha);
+		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
+		void learnAttention(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
 		void stepEnd();
+
+		float getRepresentationError() const;
 
 		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;
@@ -121,20 +125,20 @@ namespace sc {
 			_visible[x + y * _visibleWidth]._input = value;
 		}
 
-		void setHiddenPreference(int index, float value) {
-			_hidden[index]._preference = value;
+		void setAttention(int index, float value) {
+			_hidden[index]._attention = value;
 		}
 
-		void setHiddenPreference(int x, int y, float value) {
-			_hidden[x + y * _hiddenWidth]._preference = value;
+		void setAttention(int x, int y, float value) {
+			_hidden[x + y * _hiddenWidth]._attention = value;
 		}
 
-		float getHiddenPreference(int index) const {
-			return _hidden[index]._preference;
+		float getAttention(int index) const {
+			return _hidden[index]._attention;
 		}
 
-		float getHiddenPreference(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._preference;
+		float getAttention(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._attention;
 		}
 
 		float getVisibleRecon(int index) const {
@@ -216,8 +220,6 @@ namespace sc {
 		int getInhbitionRadius() const {
 			return _inhibitionRadius;
 		}
-
-		void zeroPreferences();
 
 		float getVHWeight(int hi, int ci) const {
 			return _hidden[hi]._visibleHiddenConnections[ci]._weight;

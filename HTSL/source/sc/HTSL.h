@@ -21,27 +21,23 @@ namespace sc {
 			float _rscBetaVisible;
 			float _rscBetaHidden;
 			float _rscGamma;
-			float _rscDeltaVisible;
-			float _rscDeltaHidden;
-
-			float _preferBetaVisible;
-			float _preferBetaHidden;
-
-			float _errorPropagationDecay;
+			float _rscLearnTolerance;
+			float _rscMinLearnTolerance;
 
 			float _nodeAlphaLateral;
 			float _nodeAlphaFeedback;
 
 			float _nodeBiasAlpha;
 
+			float _attentionScalar;
+
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
-				_feedbackRadius(6), _lateralRadius(6),
+				_receptiveRadius(8), _inhibitionRadius(6), _recurrentRadius(8),
+				_feedbackRadius(8), _lateralRadius(8),
 				_sparsity(1.0f / 121.0f), 
-				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_preferBetaVisible(0.2f), _preferBetaHidden(0.2f), _errorPropagationDecay(0.8f),
-				_nodeAlphaLateral(0.05f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.03f)
+				_rscAlpha(0.4f), _rscBetaVisible(0.2f), _rscBetaHidden(0.2f), _rscGamma(0.02f), _rscLearnTolerance(0.02f), _rscMinLearnTolerance(0.0001f),
+				_nodeAlphaLateral(0.05f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.04f), _attentionScalar(0.0f)
 			{}
 		};
 
@@ -64,17 +60,15 @@ namespace sc {
 			float _activation;
 			float _state;
 			float _statePrev;
-
-			float _weight;
-
-			float _usage;
+			float _bit;
+			float _bitPrev;
 
 			float _bias;
 
 			float _error;
 
 			PredictionNode()
-				: _activation(0.0f), _state(0.0f), _statePrev(0.0f), _bias(0.0f), _error(0.0f)
+				: _activation(0.0f), _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bias(0.0f), _error(0.0f)
 			{}
 		};
 
@@ -87,15 +81,12 @@ namespace sc {
 		std::vector<LayerDesc> _layerDescs;
 		std::vector<Layer> _layers;
 
+		std::vector<float> _predictedInput;
+		std::vector<float> _predictedInputPrev;
+
 		int _inputWidth, _inputHeight;
 
 	public:
-		int _updateIterations;
-
-
-		HTSL()
-		{}
-
 		void createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, std::mt19937 &generator);
 
 		void setInput(int index, float value) {
@@ -107,11 +98,11 @@ namespace sc {
 		}
 
 		float getPrediction(int index) const {
-			return _layers.front()._predictionNodes[index]._state;
+			return _predictedInput[index];
 		}
 
 		float getPrediction(int x, int y) const {
-			return _layers.front()._predictionNodes[x + y * _inputWidth]._state;
+			return _predictedInput[x + y * _inputWidth];
 		}
 
 		float getPredictionFromLayer(int l, int index) const {
@@ -119,12 +110,11 @@ namespace sc {
 		}
 
 		float getPredictionFromLayer(int l, int x, int y) const {
-			return _layers[l]._predictionNodes[x + y * _inputWidth]._state;
+			return _layers[l]._predictionNodes[x + y * _layerDescs[l]._width]._state;
 		}
 
 		void update();
-		void learnRSC();
-		void learnPrediction(float importance = 1.0f);
+		void learn(float importance = 1.0f);
 		void stepEnd();
 
 		const std::vector<LayerDesc> &getLayerDescs() const {
