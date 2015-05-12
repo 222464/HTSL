@@ -131,6 +131,7 @@ void HTSL::update() {
 	// Down (predictions)
 	for (int l = _layers.size() - 1; l >= 0; l--) {
 		if (l == _layers.size() - 1) {		
+			// Activations
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
@@ -139,7 +140,51 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
-				node._state = sigmoid(sum);
+				node._activation = sum;
+			}
+
+			// Inhibition
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				const RecurrentSparseCoder2D &rsc = _layers[l - 1]._rsc;
+
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float inhibition = 0.0f;
+
+				for (int ci = 0; ci < rsc._hidden[ni]._hiddenHiddenConnections.size(); ci++)
+					inhibition += rsc._hidden[ni]._hiddenHiddenConnections[ci]._weight * rsc._hidden[ni]._hiddenHiddenConnections[ci]._falloff * (_layers[l]._predictionNodes[rsc._hidden[ni]._hiddenHiddenConnections[ci]._index]._activation > node._activation ? 1.0f : 0.0f);
+
+				node._state = std::max(0.0f, sigmoid(node._activation + inhibition) * 2.0f - 1.0f);
+			}
+		}
+		else if (l > 0) {
+			// Activations
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float sum = node._bias;
+
+				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
+					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
+
+				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
+					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
+
+				node._activation = sum;
+			}
+
+			// Inhibition
+			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
+				const RecurrentSparseCoder2D &rsc = _layers[l - 1]._rsc;
+
+				PredictionNode &node = _layers[l]._predictionNodes[ni];
+
+				float inhibition = 0.0f;
+
+				for (int ci = 0; ci < rsc._hidden[ni]._hiddenHiddenConnections.size(); ci++)
+					inhibition += rsc._hidden[ni]._hiddenHiddenConnections[ci]._weight * rsc._hidden[ni]._hiddenHiddenConnections[ci]._falloff * (_layers[l]._predictionNodes[rsc._hidden[ni]._hiddenHiddenConnections[ci]._index]._activation > node._activation ? 1.0f : 0.0f);
+
+				node._state = std::max(0.0f, sigmoid(node._activation + inhibition) * 2.0f - 1.0f);
 			}
 		}
 		else {
@@ -154,68 +199,7 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
 
-				node._state = sigmoid(sum);
-			}
-		}
-	}
-}
-
-void HTSL::updateUnboundedInput() {
-	// Up (feature extraction)
-	for (int l = 0; l < _layers.size(); l++) {
-		if (l != 0) {
-			int prevLayerIndex = l - 1;
-
-			for (int vi = 0; vi < _layers[prevLayerIndex]._rsc.getNumHidden(); vi++)
-				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
-		}
-
-		_layers[l]._rsc.activate();
-		_layers[l]._rsc.reconstruct();
-	}
-
-	// Down (predictions)
-	for (int l = _layers.size() - 1; l >= 0; l--) {
-		if (l == _layers.size() - 1) {
-			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
-				PredictionNode &node = _layers[l]._predictionNodes[ni];
-
-				float sum = node._bias;
-
-				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
-
-				node._state = sigmoid(sum);
-			}
-		}
-		else if (l == 0) {
-			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
-				PredictionNode &node = _layers[l]._predictionNodes[ni];
-
-				float sum = node._bias;
-
-				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
-
-				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
-					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
-
-				node._state = sum;
-			}
-		}
-		else {
-			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
-				PredictionNode &node = _layers[l]._predictionNodes[ni];
-
-				float sum = node._bias;
-
-				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
-					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
-
-				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
-					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._state;
-
-				node._state = sigmoid(sum);
+				node._state = node._activation = sum;
 			}
 		}
 	}
@@ -264,7 +248,7 @@ void HTSL::learnPrediction(float importance) {
 				}
 
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++) {
-					_layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._error += _layerDescs[l]._errorPropagationDecay * node._error * node._feedbackConnections[ci]._weight;
+					_layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._error += _layerDescs[l]._errorPropagationDecay * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._statePrev * node._error * node._feedbackConnections[ci]._weight;
 
 					node._feedbackConnections[ci]._weight += _layerDescs[l]._nodeAlphaFeedback * node._error * _layers[l + 1]._predictionNodes[node._feedbackConnections[ci]._index]._statePrev;
 				}
@@ -273,7 +257,7 @@ void HTSL::learnPrediction(float importance) {
 	}
 
 	for (int l = 0; l < _layers.size(); l++)
-		_layers[l]._rsc.preferBasedOnPrev(_layerDescs[l]._preferBetaVisible * importance, _layerDescs[l]._preferBetaHidden * importance);
+		_layers[l]._rsc.preferBasedOnPrev(_layerDescs[l]._preferBetaVisible * importance);
 }
 
 void HTSL::stepEnd() {

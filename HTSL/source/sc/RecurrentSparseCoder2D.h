@@ -110,7 +110,7 @@ namespace sc {
 		void activate();
 		void reconstruct();
 		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float deltaVisible, float deltaHidden, float sparsity);
-		void preferBasedOnPrev(float betaVisible, float betaHidden);
+		void preferBasedOnPrev(float alpha);
 		void stepEnd();
 
 		void setVisibleInput(int index, float value) {
@@ -228,5 +228,7 @@ namespace sc {
 		}
 
 		void getVHWeights(int hx, int hy, std::vector<float> &rectangle) const;
+
+		friend class HTSL;
 	};
 }

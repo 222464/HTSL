@@ -122,6 +122,9 @@ int main() {
 
 	layerDescs[0]._width = 16;
 	layerDescs[0]._height = 16;
+	layerDescs[0]._nodeAlphaFeedback = 0.01f;
+	layerDescs[0]._nodeAlphaLateral = 0.01f;
+	layerDescs[0]._nodeBiasAlpha = 0.01f;
 
 	layerDescs[1]._width = 12;
 	layerDescs[1]._height = 12;
@@ -181,9 +184,9 @@ int main() {
 
 		htsl.update();
 
-		for (int x = 0; x < 16; x++) {
-			for (int y = 0; y < 16; y++) {
-				std::cout << (htsl.getLayers()[0]._rsc.getHiddenBit(x, y) > 0.5f ? "1" : "0");
+		for (int x = 0; x < layerDescs[1]._width; x++) {
+			for (int y = 0; y < layerDescs[1]._height; y++) {
+				std::cout << (htsl.getPredictionFromLayer(1, x, y) > 0.0f ? "1" : "0");
 			}
 
 			std::cout << std::endl;

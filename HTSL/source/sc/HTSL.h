@@ -40,8 +40,8 @@ namespace sc {
 				_feedbackRadius(6), _lateralRadius(6),
 				_sparsity(1.0f / 121.0f), 
 				_rscAlpha(0.2f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.05f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f),
-				_preferBetaVisible(0.1f), _preferBetaHidden(0.1f), _errorPropagationDecay(0.5f),
-				_nodeAlphaLateral(0.2f), _nodeAlphaFeedback(0.4f), _nodeBiasAlpha(0.1f)
+				_preferBetaVisible(0.2f), _preferBetaHidden(0.2f), _errorPropagationDecay(0.8f),
+				_nodeAlphaLateral(0.05f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.03f)
 			{}
 		};
 
@@ -61,6 +61,7 @@ namespace sc {
 			std::vector<PredictionConnection> _feedbackConnections;
 			std::vector<PredictionConnection> _lateralConnections;
 
+			float _activation;
 			float _state;
 			float _statePrev;
 
@@ -73,7 +74,7 @@ namespace sc {
 			float _error;
 
 			PredictionNode()
-				: _state(0.0f), _statePrev(0.0f), _bias(0.0f), _error(0.0f)
+				: _activation(0.0f), _state(0.0f), _statePrev(0.0f), _bias(0.0f), _error(0.0f)
 			{}
 		};
 
@@ -113,8 +114,15 @@ namespace sc {
 			return _layers.front()._predictionNodes[x + y * _inputWidth]._state;
 		}
 
+		float getPredictionFromLayer(int l, int index) const {
+			return _layers[l]._predictionNodes[index]._state;
+		}
+
+		float getPredictionFromLayer(int l, int x, int y) const {
+			return _layers[l]._predictionNodes[x + y * _inputWidth]._state;
+		}
+
 		void update();
-		void updateUnboundedInput();
 		void learnRSC();
 		void learnPrediction(float importance = 1.0f);
 		void stepEnd();

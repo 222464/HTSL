@@ -105,7 +105,7 @@ namespace sc {
 			return _lviNodes[nodeIndex]._state;
 		}
 
-		void update(float reward, std::mt19937 &generator, bool unboundedInput = false);
+		void update(float reward, std::mt19937 &generator);
 
 		const HTSL &getHTSL() const {
 			return _htsl;

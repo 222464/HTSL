@@ -166,6 +166,8 @@ void RecurrentSparseCoder2D::activate() {
 
 		_hidden[hi]._state = std::max(0.0f, sigmoid(_hidden[hi]._activation + inhibition) * 2.0f - 1.0f);
 		_hidden[hi]._bit = _hidden[hi]._state > 0.0f ? 1.0f : 0.0f;
+
+		//_hidden[hi]._state = _hidden[hi]._bit;
 	}
 }
 
@@ -211,13 +213,10 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 	}
 }
 
-void RecurrentSparseCoder2D::preferBasedOnPrev(float betaVisible, float betaHidden) {
+void RecurrentSparseCoder2D::preferBasedOnPrev(float alpha) {
 	for (int hi = 0; hi < _hidden.size(); hi++) {
-		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-			_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * (_hidden[hi]._preference * _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._inputPrev);
-
-		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * (_hidden[hi]._preference * _hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrevPrev);
+		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * _hidden[hi]._statePrev * _hidden[hi]._preference * _hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._statePrev);
 	}
 }
 

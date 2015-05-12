@@ -257,7 +257,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 	_htsl.createRandom(inputWidth, inputHeight, layerDescs, generator);
 }
 
-void HTSLPVLV::update(float reward, std::mt19937 &generator, bool unboundedInput) {
+void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 	float targetP = _expectedReward + _expectedAlpha * (reward - _expectedReward);
 
 	for (int ni = 0; ni < _pvNodes.size(); ni++)
@@ -307,10 +307,7 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator, bool unboundedInput
 	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 	std::normal_distribution<float> perturbationDist(0.0f, _actionPerturbationStdDev);
 
-	if (unboundedInput)
-		_htsl.updateUnboundedInput();
-	else
-		_htsl.update();
+	_htsl.update();
 
 	_htsl.learnRSC();
 	_htsl.learnPrediction(std::abs(reward - 0.5f) * 2.0f);
