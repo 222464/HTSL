@@ -103,7 +103,7 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(0.5f, 0.05f, 0.05f, 0.5f, 0.05f, 10.0f, 0.01f);
+			sparseCoder.learn(0.5f, 0.1f, 0.1f, 0.04f, 0.05f, 10.0f, 0.001f);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {

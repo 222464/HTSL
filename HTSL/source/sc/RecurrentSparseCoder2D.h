@@ -78,7 +78,6 @@ namespace sc {
 			float _error;
 			float _activation;
 			float _reconstruction; // From recurrent connections
-			float _reconstructionPrev; // From recurrent connections
 			float _attention;
 
 			HiddenNode()
