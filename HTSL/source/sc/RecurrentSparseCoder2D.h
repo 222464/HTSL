@@ -111,7 +111,7 @@ namespace sc {
 
 		void activate();
 		void reconstruct();
-		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
+		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float noveltyPower, float learnTolerance);
 		void attention(float alpha);
 		void stepEnd();
 
@@ -187,6 +187,22 @@ namespace sc {
 
 		float getHiddenBitPrev(int x, int y) const {
 			return _hidden[x + y * _hiddenWidth]._bitPrev;
+		}
+
+		float getHiddenNovelty(int index) const {
+			return _hidden[index]._bit * (1.0f - _hidden[index]._bitPrev);
+		}
+
+		float getHiddenNovelty(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._bit * (1.0f - _hidden[x + y * _hiddenWidth]._bitPrev);
+		}
+
+		float getHiddenNoveltyPrev(int index) const {
+			return _hidden[index]._bitPrev * (1.0f - _hidden[index]._bitPrevPrev);
+		}
+
+		float getHiddenNoveltyPrev(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._bitPrev * (1.0f - _hidden[x + y * _hiddenWidth]._bitPrevPrev);
 		}
 
 		int getNumVisible() const {

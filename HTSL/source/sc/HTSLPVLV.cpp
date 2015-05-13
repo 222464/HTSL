@@ -309,7 +309,7 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 
 	_htsl.update();
 
-	_htsl.learn();
+	_htsl.learn(std::abs(reward - 0.5f) * 2.0f);
 
 	// Collect expected reward
 	float pvSum = 0.0f;

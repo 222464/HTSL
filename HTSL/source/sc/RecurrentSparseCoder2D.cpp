@@ -40,7 +40,7 @@ void RecurrentSparseCoder2D::createRandom(int visibleWidth, int visibleHeight, i
 		int centerX = std::round(hx * hiddenToVisibleWidth);
 		int centerY = std::round(hy * hiddenToVisibleHeight);
 
-		_hidden[hi]._bias = 0.0f;
+		_hidden[hi]._bias = 1.0f;
 
 		// Receptive
 		_hidden[hi]._visibleHiddenConnections.reserve(receptiveSize);
@@ -170,10 +170,10 @@ void RecurrentSparseCoder2D::activate() {
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
 			inhibition += _hidden[hi]._hiddenHiddenConnections[ci]._weight * _hidden[hi]._hiddenHiddenConnections[ci]._falloff * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0f : 0.0f);
 
-		_hidden[hi]._state = std::max(0.0f, 1.0f + inhibition * sigmoid(_hidden[hi]._bias));
+		_hidden[hi]._state = std::max(0.0f, 1.0f + inhibition * sigmoid(-_hidden[hi]._bias));
 		_hidden[hi]._bit = _hidden[hi]._state > 0.0f ? 1.0f : 0.0f;
 
-		_hidden[hi]._state = _hidden[hi]._bit;
+		//_hidden[hi]._state = _hidden[hi]._bit;
 	}
 }
 
@@ -206,31 +206,40 @@ void RecurrentSparseCoder2D::reconstruct() {
 		_hidden[hi]._reconstruction /= std::max(0.0001f, hiddenSums[hi]);
 }
 
-void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance) {
+void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float noveltyPower, float learnTolerance) {
+	std::vector<float> visibleErrors(_visible.size(), 0.0f);
+	std::vector<float> hiddenErrors(_hidden.size(), 0.0f);
+
+	for (int vi = 0; vi < _visible.size(); vi++)
+		visibleErrors[vi] = _visible[vi]._input - _visible[vi]._reconstruction;
+
+	for (int vi = 0; vi < _hidden.size(); vi++)
+		hiddenErrors[vi] = _hidden[vi]._statePrev - _hidden[vi]._reconstruction;
+	
 	float sparsitySquared = sparsity * sparsity;
 
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		if (_hidden[hi]._activation < -learnTolerance) {
-			float learn = _hidden[hi]._bit * (1.0f - _hidden[hi]._bitPrev);
+			float learn = _hidden[hi]._bit;// *std::pow(1.0f - _hidden[hi]._bias, noveltyPower);
 
 			for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++)
-				_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * learn * (_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input - _hidden[hi]._visibleHiddenConnections[ci]._weight);
+				_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * learn * visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index];
 
 			for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
-				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * learn * (_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev - _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight);
+				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * learn * hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index];// (_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev - _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight);
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * _hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit * _hidden[hi]._bit - sparsitySquared));
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit * _hidden[hi]._bit - sparsitySquared));
 
-		_hidden[hi]._bias += gamma * (_hidden[hi]._bit - sparsity);
+		_hidden[hi]._bias += gamma * (sparsity - _hidden[hi]._bit);
 	}
 }
 
 void RecurrentSparseCoder2D::attention(float alpha) {
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * _hidden[hi]._attention * _hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bitPrev);
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * _hidden[hi]._attention * _hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._statePrev);
 	}
 }
 

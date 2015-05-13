@@ -51,11 +51,11 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 26;
-	layerDescs[0]._height = 26;
+	layerDescs[0]._width = 32;
+	layerDescs[0]._height = 32;
 
-	layerDescs[1]._width = 16;
-	layerDescs[1]._height = 16;
+	layerDescs[1]._width = 24;
+	layerDescs[1]._height = 24;
 
 	//layerDescs[2]._width = 8;
 	//layerDescs[2]._height = 8;
@@ -292,7 +292,7 @@ int main() {
 		}
 
 		// Blue slime
-		/*{		
+		{		
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
 			blue._position += blue._velocity * dt;
@@ -327,10 +327,10 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}*/
+		}
 
 		// Blue slime
-		{
+		/*{
 			const float scalar = 0.001f;
 			// Percepts
 			std::vector<float> inputs(12);
@@ -402,7 +402,7 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}
+		}*/
 
 		// Red slime
 		{
