@@ -173,7 +173,7 @@ void HTSL::update() {
 			for (int ci = 0; ci < rsc._hidden[ni]._hiddenHiddenConnections.size(); ci++)
 				inhibition += rsc._hidden[ni]._hiddenHiddenConnections[ci]._weight * rsc._hidden[ni]._hiddenHiddenConnections[ci]._falloff * (_layers[l]._predictionNodes[rsc._hidden[ni]._hiddenHiddenConnections[ci]._index]._activation > node._activation ? 1.0f : 0.0f);
 
-			node._state = std::max(0.0f, sigmoid(node._activation + inhibition) * 2.0f - 1.0f);
+			node._state = std::max(0.0f, 1.0f + inhibition * sigmoid(rsc._hidden[ni]._bias));
 
 			node._bit = node._state > 0.0f ? 1.0f : 0.0f;
 
@@ -210,7 +210,7 @@ void HTSL::learn(float importance) {
 		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 			PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-			node._error = _layers[l]._rsc.getHiddenState(ni) - node._statePrev;
+			node._error = _layers[l]._rsc.getHiddenActivation(ni) - node._activationPrev;
 
 			_layers[l]._rsc.setAttention(ni, node._error * importance);
 		}

@@ -88,7 +88,7 @@ int main() {
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
 	const int useSequence = 0;
-	const int useLength = 20;
+	const int useLength = 50;
 
 	std::unordered_set<int> usedNotes;
 
@@ -120,11 +120,11 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 24;
-	layerDescs[0]._height = 24;
+	layerDescs[0]._width = 32;
+	layerDescs[0]._height = 32;
 
-	layerDescs[1]._width = 12;
-	layerDescs[1]._height = 12;
+	layerDescs[1]._width = 20;
+	layerDescs[1]._height = 20;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 

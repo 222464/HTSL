@@ -38,8 +38,8 @@ namespace sc {
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(8), _inhibitionRadius(8), _recurrentRadius(6),
-				_feedbackRadius(8), _lateralRadius(8),
+				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
+				_feedbackRadius(6), _lateralRadius(6),
 				_sparsity(10.0f / 121.0f), 
 				_rscAlpha(0.2f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.05f), _rscNoveltyPower(0.0f), _rscLearnTolerance(0.001f), _rscMinLearnTolerance(0.0001f),
 				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.2f), _nodeBiasAlpha(0.05f), _attentionAlpha(0.0f), _hiddenUsageDecay(0.02f), _lowUsagePreference(4.0f)

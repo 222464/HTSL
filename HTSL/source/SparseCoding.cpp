@@ -16,20 +16,20 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 32;
-	const int codeHeight = 32;
+	const int codeWidth = 48;
+	const int codeHeight = 48;
 	const float learnAlpha = 0.01f;
 	const float sparsityDecay = 0.1f;
 
 	float sparsity = 1.0f;
 
-	const int stepsPerFrame = 8;
+	const int stepsPerFrame = 4;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
 	sc::RecurrentSparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 10, 6, 4, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 12, 10, 4, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 

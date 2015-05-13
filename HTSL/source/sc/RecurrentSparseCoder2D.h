@@ -164,6 +164,14 @@ namespace sc {
 			return _hidden[x + y * _hiddenWidth]._state;
 		}
 
+		float getHiddenActivation(int index) const {
+			return _hidden[index]._activation;
+		}
+
+		float getHiddenActivation(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._activation;
+		}
+
 		float getHiddenStatePrev(int index) const {
 			return _hidden[index]._statePrev;
 		}
