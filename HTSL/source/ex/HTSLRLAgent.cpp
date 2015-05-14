@@ -23,16 +23,13 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 			inputTypes[i] = sc::HTSLSARSA::_q;
 	}
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
+	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 32;
-	layerDescs[0]._height = 32;
+	layerDescs[0]._width = 24;
+	layerDescs[0]._height = 24;
 
-	layerDescs[1]._width = 24;
-	layerDescs[1]._height = 24;
-
-	layerDescs[2]._width = 16;
-	layerDescs[2]._height = 16;
+	layerDescs[1]._width = 16;
+	layerDescs[1]._height = 16;
 
 	_htslrl.createRandom(rootDim, rootDim, 8, inputTypes, layerDescs, _generator);
 }

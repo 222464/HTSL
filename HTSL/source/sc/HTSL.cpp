@@ -177,6 +177,8 @@ void HTSL::update() {
 
 			node._bit = node._state > 0.0f ? 1.0f : 0.0f;
 
+			node._state = node._bit;
+
 			// Also update hidden usage
 			node._hiddenUsage = (1.0f - _layerDescs[l]._hiddenUsageDecay) * node._hiddenUsage + _layerDescs[l]._hiddenUsageDecay * rsc.getHiddenBit(ni);
 		}
@@ -212,7 +214,7 @@ void HTSL::learn(float importance) {
 
 			node._error = _layers[l]._rsc.getHiddenActivation(ni) - node._activationPrev;
 
-			_layers[l]._rsc.setAttention(ni, node._error * importance);
+			_layers[l]._rsc.setAttention(ni, _layerDescs[l]._attentionAlpha * node._error * importance);
 		}
 	}
 
@@ -242,10 +244,8 @@ void HTSL::learn(float importance) {
 		}
 	}
 
-	for (int l = 0; l < _layers.size(); l++) {
+	for (int l = 0; l < _layers.size(); l++)
 		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._sparsity, _layerDescs[l]._rscNoveltyPower, _layerDescs[l]._rscLearnTolerance);
-		_layers[l]._rsc.attention(_layerDescs[l]._attentionAlpha);
-	}
 }
 
 void HTSL::stepEnd() {

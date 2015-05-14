@@ -16,9 +16,9 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 48;
-	const int codeHeight = 48;
-	const float learnAlpha = 0.01f;
+	const int codeWidth = 32;
+	const int codeHeight = 32;
+	const float learnAlpha = 0.2f;
 	const float sparsityDecay = 0.1f;
 
 	float sparsity = 1.0f;
@@ -103,7 +103,7 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(0.5f, 0.1f, 0.1f, 0.04f, 0.05f, 10.0f, 0.001f);
+			sparseCoder.learn(0.5f, 0.2f, 0.2f, 0.1f, 0.05f, 0.0f, 0.001f);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {

@@ -120,16 +120,16 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 32;
-	layerDescs[0]._height = 32;
+	layerDescs[0]._width = 22;
+	layerDescs[0]._height = 22;
 
-	layerDescs[1]._width = 20;
-	layerDescs[1]._height = 20;
+	layerDescs[1]._width = 16;
+	layerDescs[1]._height = 16;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 50; loop++) {
+	for (int loop = 0; loop < 40; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
