@@ -141,7 +141,7 @@ void HTSL::update() {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-				float sum = node._bias;
+				float sum = 0.0f;// node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
@@ -154,7 +154,7 @@ void HTSL::update() {
 			for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 				PredictionNode &node = _layers[l]._predictionNodes[ni];
 
-				float sum = node._bias;
+				float sum = 0.0f;// node._bias;
 
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
@@ -183,7 +183,7 @@ void HTSL::update() {
 			node._state = node._bit;
 
 			// Also update hidden usage
-			//node._hiddenUsage = (1.0f - _layerDescs[l]._hiddenUsageDecay) * node._hiddenUsage + _layerDescs[l]._hiddenUsageDecay * rsc.getHiddenBit(ni);
+			node._hiddenUsage = (1.0f - _layerDescs[l]._hiddenUsageDecay) * node._hiddenUsage + _layerDescs[l]._hiddenUsageDecay * rsc.getHiddenState(ni);
 		}
 
 		if (l > 0) {
@@ -239,7 +239,7 @@ void HTSL::learn(float importance) {
 		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 			PredictionNode &node = _layers[l]._predictionNodes[ni];
 			
-			node._error = _layers[l]._rsc.getHiddenActivation(ni) - node._activationPrev;
+			node._error = _layers[l]._rsc.getHiddenState(ni) - node._statePrev;
 
 			_layers[l]._rsc.setAttention(ni, _layerDescs[l]._attentionAlpha * node._error * importance);
 		}

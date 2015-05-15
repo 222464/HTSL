@@ -230,7 +230,7 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * sigmoid(-_hidden[hi]._attention) * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit * _hidden[hi]._bit - sparsitySquared));
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::min(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight - alpha * sigmoid(-_hidden[hi]._attention) * _hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit * _hidden[hi]._bit - sparsitySquared));
 
 		_hidden[hi]._bias += gamma * (_hidden[hi]._bit - sparsity);
 	}

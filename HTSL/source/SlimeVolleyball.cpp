@@ -33,7 +33,7 @@ int main() {
 
 	// ---------------------------------- RL Init ------------------------------------
 
-	/*sc::HTSLPVLV agentBlue;
+	sc::HTSLPVLV agentBlue;
 	sc::HTSLPVLV agentRed;
 
 	std::vector<sc::HTSLPVLV::InputType> inputTypes(20);
@@ -55,17 +55,21 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 32;
-	layerDescs[0]._height = 32;
+	layerDescs[0]._width = 20;
+	layerDescs[0]._height = 20;
 
-	layerDescs[1]._width = 24;
-	layerDescs[1]._height = 24;
+	layerDescs[1]._width = 12;
+	layerDescs[1]._height = 12;
 
 	//layerDescs[2]._width = 8;
 	//layerDescs[2]._height = 8;
 
 	agentBlue.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
-	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);*/
+	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
+
+	float rewardTimer = 0.0f;
+	float rewardTime = 0.25f;
+	float lastReward = 0.5f;
 
 	/*sc::HTSLSARSA agentBlue;
 	sc::HTSLSARSA agentRed;
@@ -92,11 +96,11 @@ int main() {
 	agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
 	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);*/
 
-	deep::FERL agentBlue;
-	agentBlue.createRandom(12, 2, 32, 0.01f, generator);
+	//deep::FERL agentBlue;
+	//agentBlue.createRandom(12, 2, 32, 0.01f, generator);
 
-	deep::FERL agentRed;
-	agentRed.createRandom(12, 2, 32, 0.01f, generator);
+	//deep::FERL agentRed;
+	//agentRed.createRandom(12, 2, 32, 0.01f, generator);
 
 	// --------------------------------- Game Init -----------------------------------
 
@@ -362,32 +366,38 @@ int main() {
 			std::vector<float> outputs(2);
 
 			// Actions
-			//for (int i = 0; i < 12; i++)
-			//	agentBlue.setState(i, inputs[i]);
+			for (int i = 0; i < 12; i++)
+				agentBlue.setState(i, inputs[i]);
 
 			float reward = (ball._position.x > fieldCenter.x && prevBallX < fieldCenter.x ? 1.0f : 0.5f) * 0.5f + (scoreRed > prevScoreRed ? 0.0f : 0.5f) * 0.5f;
 
-			if (reward != 0.5f)
-				reward = reward > 0.5f ? 1.0f : 0.0f;
+			if (reward != 0.5f) {
+				lastReward = reward = reward > 0.5f ? 1.0f : 0.0f;
+				rewardTimer = 0.0f;
+			}
+			else if (rewardTimer < rewardTime) {
+				reward = lastReward;
+
+				rewardTimer += dt;
+			}
 
 			if (blueBounced)
 				reward = std::max(reward, 0.55f);
 
 			//reward *= 0.01f;
 
-			reward = (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.001f;
+			//reward = (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
-			//agentBlue.update(reward, generator);
-			//agentBlue.update(reward, generator);
+			agentBlue.update(reward, generator);
 
-			//float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
-			//bool jump = agentBlue.getActionFromNodeIndex(1) > 0.5f;
+			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
+			bool jump = agentBlue.getActionFromNodeIndex(1) > 0.5f;
 
-			std::vector<float> action(2);
-			agentBlue.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 64, 3, 0.02f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
+			//std::vector<float> action(2);
+			//agentBlue.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 64, 3, 0.02f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
 
-			float move = action[0];
-			bool jump = action[1] > 0.0f;
+			//float move = action[0];
+			//bool jump = action[1] > 0.0f;
 
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
@@ -442,40 +452,47 @@ int main() {
 			inputs[index++] = blue._velocity.x * scalar;
 			inputs[index++] = blue._velocity.y * scalar;
 
-			std::vector<float> outputs(2);
+			//std::vector<float> outputs(2);
 
 			// Actions
-			//for (int i = 0; i < 12; i++)
-			//	agentRed.setState(i, inputs[i]);
+			for (int i = 0; i < 12; i++)
+				agentRed.setState(i, inputs[i]);
 
 			float reward = (ball._position.x < fieldCenter.x && prevBallX > fieldCenter.x ? 1.0f : 0.5f) * 0.5f + (scoreBlue > prevScoreBlue ? 0.0f : 0.5f) * 0.5f;
 			
-			if (reward != 0.5f)
-				reward = reward > 0.5f ? 1.0f : 0.0f;
+			if (reward != 0.5f) {
+				lastReward = reward = reward > 0.5f ? 1.0f : 0.0f;
+				rewardTimer = 0.0f;
+			}
+			else if (rewardTimer < rewardTime) {
+				reward = lastReward;
+
+				rewardTimer += dt;
+			}
 
 			if (redBounced)
 				reward = std::max(reward, 0.55f);
 
-			reward = reward * 2.0f - 1.0f;
+			//reward = reward * 2.0f - 1.0f;
 
-			reward -= std::abs(ball._position.x - red._position.x) * 0.001f;
+			//reward -= std::abs(ball._position.x - red._position.x) * 0.001f;
 
-			reward *= 0.05f;
+			//reward *= 0.05f;
 
-			reward = (scoreRed - prevScoreRed) - (scoreBlue - prevScoreBlue) - std::abs(ball._position.x - red._position.x) * 0.001f;
+			//reward = (scoreRed - prevScoreRed) - (scoreBlue - prevScoreBlue) - std::abs(ball._position.x - red._position.x) * 0.001f;
 
 			//std::cout << "Reward: " << reward << std::endl;
 
 			//agentRed.update(reward, generator);
-			//agentRed.update(reward, generator);
-			std::vector<float> action(2);
-			agentRed.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 32, 6, 0.05f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
+			agentRed.update(reward, generator);
+			//std::vector<float> action(2);
+			//agentRed.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 32, 6, 0.05f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
 
-			float move = action[0];
-			bool jump = action[1] > 0.0f;
+			//float move = action[0];
+			//bool jump = action[1] > 0.0f;
 
-			//float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
-			//bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
+			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
+			bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
 
 			red._velocity.y += gravity * dt;
 			red._velocity.x += -slimeMoveDeccel * red._velocity.x * dt;
@@ -631,7 +648,7 @@ int main() {
 			renderWindow.draw(scoreText);
 		}
 
-		/*if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 			float scale = 4.0f;
 
 			float alignment = 0.0f;
@@ -703,7 +720,7 @@ int main() {
 			s.setPosition(position);
 
 			renderWindow.draw(s);
-		}*/
+		}
 		
 		renderWindow.display();
 	} while (!quit);
