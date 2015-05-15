@@ -129,7 +129,7 @@ int main() {
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 50; loop++) {
+	for (int loop = 0; loop < 20; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
@@ -144,11 +144,15 @@ int main() {
 			htsl.learn();
 			htsl.stepEnd();
 		}
+
+		std::cout << "Loop " << loop << std::endl;
 	}
 
 	// Show results
 	int numCorrect = 0;
 	int numTotal = 0;
+
+	std::ofstream outputFile("pianoRollOutput.txt");
 
 	for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 		Frame &frame = train._sequences[useSequence]._frames[f];
@@ -192,14 +196,27 @@ int main() {
 
 		std::cout << "Prediction: ";
 
-		for (int i = 0; i < squareDim * squareDim; i++)
-			if (htsl.getPrediction(i) > 0.5f)
+		bool noNote = true;
+
+		for (int i = 0; i < squareDim * squareDim; i++) {
+			if (htsl.getPrediction(i) > 0.5f) {
 				std::cout << inputToNote[i] << " ";
+				outputFile << inputToNote[i] << " ";
+
+				noNote = false;
+			}
+		}
+
+		if (noNote)
+			outputFile << "n";
 
 		std::cout << std::endl;
+		outputFile << std::endl;
 
 		htsl.stepEnd();
 	}
+
+	outputFile.close();
 
 	std::cout << "Correct: " << (static_cast<float>(numCorrect) / static_cast<float>(numTotal) * 100.0f) << "%" << std::endl;
 
