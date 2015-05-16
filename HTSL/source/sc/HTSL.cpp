@@ -130,7 +130,7 @@ void HTSL::update() {
 				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
 		}
 
-		_layers[l]._rsc.activate();
+		_layers[l]._rsc.activate(_layerDescs[l]._rscExcitation);
 		_layers[l]._rsc.reconstruct();
 	}
 
@@ -146,7 +146,7 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._lateralConnections.size(); ci++)
 					sum += node._lateralConnections[ci]._falloff * node._lateralConnections[ci]._weight * _layers[l]._rsc.getHiddenState(node._lateralConnections[ci]._index);
 
-				node._activation = sigmoid(sum);
+				node._activation = sum;
 			}
 		}
 		else {
@@ -162,7 +162,7 @@ void HTSL::update() {
 				for (int ci = 0; ci < node._feedbackConnections.size(); ci++)
 					sum += node._feedbackConnections[ci]._falloff * node._feedbackConnections[ci]._weight * _layers[l]._predictionNodes[node._feedbackConnections[ci]._index]._reconstructedPrediction;
 
-				node._activation = sigmoid(sum);
+				node._activation = sum;
 			}
 		}
 
@@ -176,7 +176,7 @@ void HTSL::update() {
 			for (int ci = 0; ci < rsc._hidden[ni]._hiddenHiddenConnections.size(); ci++)
 				inhibition += rsc._hidden[ni]._hiddenHiddenConnections[ci]._weight * rsc._hidden[ni]._hiddenHiddenConnections[ci]._falloff * (_layers[l]._predictionNodes[rsc._hidden[ni]._hiddenHiddenConnections[ci]._index]._activation > node._activation ? 1.0f : 0.0f);
 				
-			node._state = std::max(0.0f, node._activation + inhibition * sigmoid(rsc._hidden[ni]._bias));
+			node._state = std::max(0.0f, _layerDescs[l]._rscExcitation - inhibition * sigmoid(rsc._hidden[ni]._bias));
 
 			node._bit = node._state > 0.0f ? 1.0f : 0.0f;
 

@@ -75,16 +75,13 @@ namespace sc {
 			float _bit;
 			float _bitPrev;
 			float _bitPrevPrev;
-			float _output;
-			float _outputPrev;
 			float _error;
 			float _activation;
 			float _reconstruction; // From recurrent connections
 			float _attention;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _attention(0.0f),
-				_output(0.0f), _outputPrev(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _attention(0.0f)
 			{}
 		};
 
@@ -112,7 +109,7 @@ namespace sc {
 	public:
 		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, std::mt19937 &generator);
 
-		void activate();
+		void activate(float excitation = 1.0f);
 		void reconstruct();
 		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
 		void stepEnd();
