@@ -39,8 +39,8 @@ namespace sc {
 				: _width(16), _height(16),
 				_receptiveRadius(8), _inhibitionRadius(5), _recurrentRadius(8),
 				_feedbackRadius(8), _lateralRadius(8),
-				_sparsity(10.0f / 121.0f), 
-				_rscAlpha(0.2f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.01f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
+				_sparsity(1.0f / 121.0f), 
+				_rscAlpha(0.8f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscGamma(0.01f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
 				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.1f), _attentionAlpha(0.0f), _hiddenUsageDecay(0.02f), _lowUsagePreference(0.0f)
 			{}
 		};
