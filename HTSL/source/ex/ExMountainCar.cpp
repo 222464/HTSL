@@ -15,8 +15,8 @@ float ExMountainCar::runStep(Agent &agent, float dt) {
 
 	std::vector<float> input(2);
 
-	input[0] = 0.5f * (_position + 0.52f);
-	input[1] = _velocity * 0.1f;
+	input[0] = 0.1f * (_position + 0.52f);
+	input[1] = _velocity * 0.05f;
 
 	std::vector<float> output;
 

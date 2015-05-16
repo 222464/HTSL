@@ -30,7 +30,7 @@ namespace sc {
 		static float sigmoid(float x) {
 			return 1.0f / (1.0f + std::exp(-x));
 		}
-	private:
+
 		struct VisibleConnection {
 			unsigned short _index;
 
@@ -99,6 +99,7 @@ namespace sc {
 			{}
 		};
 
+	private:	
 		int _visibleWidth, _visibleHeight;
 		int _hiddenWidth, _hiddenHeight;
 		int _receptiveRadius;
@@ -196,6 +197,14 @@ namespace sc {
 
 		float getHiddenBitPrev(int x, int y) const {
 			return _hidden[x + y * _hiddenWidth]._bitPrev;
+		}
+
+		HiddenNode &getHiddenNode(int index) {
+			return _hidden[index];
+		}
+
+		HiddenNode &getHiddenNode(int x, int y) {
+			return _hidden[x + y * _hiddenWidth];
 		}
 
 		float getHiddenNovelty(int index) const {

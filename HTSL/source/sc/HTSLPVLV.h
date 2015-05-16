@@ -107,7 +107,7 @@ namespace sc {
 
 		void update(float reward, std::mt19937 &generator);
 
-		const HTSL &getHTSL() const {
+		HTSL &getHTSL() {
 			return _htsl;
 		}
 	};

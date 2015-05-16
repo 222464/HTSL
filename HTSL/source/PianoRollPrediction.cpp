@@ -120,11 +120,11 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 22;
-	layerDescs[0]._height = 22;
+	layerDescs[0]._width = 24;
+	layerDescs[0]._height = 24;
 
-	layerDescs[1]._width = 16;
-	layerDescs[1]._height = 16;
+	layerDescs[1]._width = 18;
+	layerDescs[1]._height = 18;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
