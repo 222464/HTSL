@@ -229,11 +229,10 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 
 			for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
 				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * learn * hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index];// (_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev - _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight);
-		
-			for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-				_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::max(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * sigmoid(_hidden[hi]._attention) * _hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._bit - sparsity * _hidden[hi]._hiddenHiddenConnections[ci]._weight));
-
 		}
+
+		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::max(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * sigmoid(_hidden[hi]._attention) * _hidden[hi]._bit * ((_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation < _hidden[hi]._activation ? 1.0f : 0.0f) - sparsity * _hidden[hi]._hiddenHiddenConnections[ci]._weight));
 	
 		_hidden[hi]._bias += gamma * (_hidden[hi]._bit - sparsity);
 	}

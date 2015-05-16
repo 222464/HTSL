@@ -173,7 +173,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 
 	float tdError = newQ - _prevValue;
 
-	//std::cout << nextQ << " " << newQ << " " << tdError << " " << _actionNodes[0]._state << std::endl;
+	std::cout << nextQ << " " << newQ << " " << tdError << " " << _actionNodes[0]._state << std::endl;
 
 	for (int ni = 0; ni < _qNodes.size(); ni++) {
 		float alphaError = _qAlpha * tdError;
