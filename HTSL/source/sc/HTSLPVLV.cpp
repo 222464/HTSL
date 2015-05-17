@@ -6,19 +6,12 @@
 
 using namespace sc;
 
-void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator) {
+void HTSLPVLV::createRandom(int inputWidth, int inputHeight, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator) {
 	assert(inputTypes.size() == inputWidth * inputHeight);
 
 	_inputTypes = inputTypes;
 
-	_actionQRadius = actionQRadius;
-
 	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
-
-	int actionQSize = std::pow(actionQRadius * 2 + 1, 2);
-
-	float visibleToHiddenWidth = static_cast<float>(layerDescs.front()._width - 1) / static_cast<float>(inputWidth - 1);
-	float visibleToHiddenHeight = static_cast<float>(layerDescs.front()._height - 1) / static_cast<float>(inputHeight - 1);
 
 	for (int vi = 0; vi < _inputTypes.size(); vi++) {
 		int vx = vi % inputWidth;
@@ -32,53 +25,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 			Node actionNode;
 
 			actionNode._inputIndex = vi;
-			actionNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							actionNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							actionNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			actionNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / std::sqrt(dist2);
-
-			for (int ci = 0; ci < actionNode._firstHiddenConnections.size(); ci++)
-				actionNode._firstHiddenConnections[ci]._weight *= normMult;
-
+	
 			_actionNodes.push_back(actionNode);
 
 			break;
@@ -88,53 +35,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 			Node pvNode;
 
 			pvNode._inputIndex = vi;
-			pvNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							pvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							pvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			pvNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / std::sqrt(dist2);
-
-			for (int ci = 0; ci < pvNode._firstHiddenConnections.size(); ci++)
-				pvNode._firstHiddenConnections[ci]._weight *= normMult;
-
+			
 			_pvNodes.push_back(pvNode);
 
 			break;
@@ -144,52 +45,6 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 			Node lvNode;
 
 			lvNode._inputIndex = vi;
-			lvNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			lvNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / std::sqrt(dist2);
-
-			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
-				lvNode._firstHiddenConnections[ci]._weight *= normMult;
 
 			_lveNodes.push_back(lvNode);
 
@@ -200,53 +55,7 @@ void HTSLPVLV::createRandom(int inputWidth, int inputHeight, int actionQRadius, 
 			Node lvNode;
 
 			lvNode._inputIndex = vi;
-			lvNode._firstHiddenConnections.reserve(actionQSize);
-
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
-
-			float dist2 = 0.0f;
-
-			for (int dx = -actionQRadius; dx <= actionQRadius; dx++)
-				for (int dy = -actionQRadius; dy <= actionQRadius; dy++) {
-					int hx = centerX + dx;
-					int hy = centerY + dy;
-
-					if (hx >= 0 && hx < layerDescs.front()._width && hy >= 0 && hy < layerDescs.front()._height) {
-						int hi = hx + hy * layerDescs.front()._width;
-
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-
-						// Secondary prediction connection
-						{
-							Connection c;
-
-							c._weight = dist01(generator);
-							c._index = hi;
-
-							lvNode._firstHiddenConnections.push_back(c);
-
-							dist2 += c._weight * c._weight;
-						}
-					}
-				}
-
-			lvNode._firstHiddenConnections.shrink_to_fit();
-
-			float normMult = 1.0f / std::sqrt(dist2);
-
-			for (int ci = 0; ci < lvNode._firstHiddenConnections.size(); ci++)
-				lvNode._firstHiddenConnections[ci]._weight *= normMult;
-
+			
 			_lviNodes.push_back(lvNode);
 
 			break;
@@ -278,8 +87,6 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 
 		for (int ni = 0; ni < _lviNodes.size(); ni++)
 			_htsl.setInput(_lviNodes[ni]._inputIndex, targetI);
-
-		lvError = targetE - _expectedSecondaryI;
 	}
 	else {
 		for (int ni = 0; ni < _lveNodes.size(); ni++)
@@ -287,11 +94,11 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 
 		for (int ni = 0; ni < _lviNodes.size(); ni++)
 			_htsl.setInput(_lviNodes[ni]._inputIndex, _expectedSecondaryI);
-
-		lvError = _expectedSecondaryE - _expectedSecondaryI;
 	}
 
-	float error = pvFilter ? (lvError + pvError) : lvError;
+	lvError = _expectedSecondaryE - _expectedSecondaryI;
+
+	float error = pvFilter ? pvError : lvError;// (lvError + pvError);
 
 	if (error > 0.0f) {
 		for (int ni = 0; ni < _actionNodes.size(); ni++) {
@@ -309,7 +116,7 @@ void HTSLPVLV::update(float reward, std::mt19937 &generator) {
 
 	_htsl.update();
 
-	_htsl.learn(std::abs(reward - 0.5f) * 2.0f);
+	_htsl.learn();
 
 	// Collect expected reward
 	float pvSum = 0.0f;

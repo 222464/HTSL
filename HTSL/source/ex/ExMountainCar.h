@@ -7,8 +7,12 @@ namespace ex {
 	private:
 		float _velocity;
 		float _position;
+		
+		float _prevVelocity;
 
 		float _prevFitness;
+
+		float _prevHeight;
 
 		sf::VertexArray _hills;
 		sf::Texture _car;
@@ -17,7 +21,7 @@ namespace ex {
 		const float _pixelsPerMeter = 128.0f;
 
 		ExMountainCar()
-			: _velocity(0.0f), _position(-0.5f), _prevFitness(0.0f)
+			: _velocity(0.0f), _position(-0.5f), _prevFitness(0.0f), _prevVelocity(0.0f), _prevHeight(0.0f)
 		{}
 
 		float runStep(Agent &agent, float dt) override;

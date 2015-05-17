@@ -2,24 +2,23 @@
 
 using namespace ex;
 
-const int numQContrastValues = 3;
-const int numQNodes = numQContrastValues * 2;
+const int numQValues = 1;
 
 void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 	_generator.seed(time(nullptr));
 
-	int rootDim = std::ceil(std::sqrt(static_cast<float>(numInputs * 2 + numOutputs * 2 + numQNodes)));
+	int totalState = numInputs + numOutputs + numQValues;
 
-	int totalState = numInputs * 2 + numOutputs + numQContrastValues;
+	int rootDim = std::ceil(std::sqrt(static_cast<float>(totalState)));
 
 	std::vector<sc::HTSLSARSA::InputType> inputTypes(rootDim * rootDim);
 
 	for (int i = 0; i < inputTypes.size(); i++) {
-		if (i < totalState)
+		if (i < numInputs)
 			inputTypes[i] = sc::HTSLSARSA::_state;
-		else if (i < totalState + numOutputs)
+		else if (i < numInputs + numOutputs)
 			inputTypes[i] = sc::HTSLSARSA::_action;
-		else if (i < totalState + numOutputs + numQContrastValues)
+		else if (i < numInputs + numOutputs + numQValues)
 			inputTypes[i] = sc::HTSLSARSA::_q;
 	}
 
@@ -37,16 +36,8 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 void HTSLRLAgent::getOutput(Experiment* pExperiment, const std::vector<float> &input, std::vector<float> &output, float reward, float dt) {
 	int inputIndex = 0;
 
-	for (int i = 0; i < input.size(); i++) {
+	for (int i = 0; i < input.size(); i++)
 		_htslrl.setState(inputIndex++, input[i]);
-		_htslrl.setState(inputIndex++, input[i] + 1.0f);
-	}
-
-	for (int i = 0; i < _htslrl.getNumActionNodes(); i++)
-		_htslrl.setState(inputIndex++, _htslrl.getActionFromNodeIndex(i) + 1.0f);
-
-	for (int i = 0; i < numQContrastValues; i++)
-		_htslrl.setState(inputIndex++, _htslrl.getQFromNodeIndex(i) + 1.0f);
 
 	_htslrl.update(reward, _generator);
 

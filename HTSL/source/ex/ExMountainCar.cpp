@@ -9,14 +9,16 @@ float mcsigmoid(float x) {
 }
 
 float ExMountainCar::runStep(Agent &agent, float dt) {
-	float fitness = (std::sin(_position * 3.0f) + 1.0f) * 0.5f;
+	float height = (std::sin(_position * 3.0f) + 1.0f) * 0.5f;
 
-	float reward = fitness * 0.05f;
+	float reward = height * 0.1f;// _velocity > 0.0f != _prevVelocity > 0.0f ? (height > _prevHeight ? 1.0f : 0.0f) : (0.5f);
+
+	_prevHeight = height;
 
 	std::vector<float> input(2);
 
-	input[0] = 0.1f * (_position + 0.52f);
-	input[1] = _velocity * 0.05f;
+	input[0] = 0.5f * (_position + 0.52f);
+	input[1] = _velocity > 0.0f ? 1.0f : 0.0f;
 
 	std::vector<float> output;
 
@@ -30,12 +32,14 @@ float ExMountainCar::runStep(Agent &agent, float dt) {
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 		action = 1.0f;
 
+	_prevVelocity = _velocity;
+
 	_velocity += (-_velocity * 0.01f + action * 0.001f + std::cos(3.0f * _position) * -0.0025f) * dt / 0.017f;
 	_position += _velocity * dt / 0.017f;
 
-	_prevFitness = fitness;
+	_prevFitness = height;
 
-	return fitness;
+	return height;
 }
 
 void ExMountainCar::initializeVisualization() {
