@@ -230,7 +230,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 	}
 
 	_prevValue = nextQ;
-	_prevNewQ = _prevValue + tdError * _qAlpha;
+	_prevNewQ = newQ;
 	_prevTdError = tdError;
 
 	_htsl.stepEnd();

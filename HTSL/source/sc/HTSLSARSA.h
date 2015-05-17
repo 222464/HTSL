@@ -63,7 +63,7 @@ namespace sc {
 
 		HTSLSARSA()
 			: _prevValue(0.0f), _prevNewQ(0.0f), _prevTdError(0.0f), _actionRandomizeChance(0.1f), _actionPerturbationStdDev(0.1f),
-			_qAlpha(0.001f), _qGamma(0.992f), _qTraceDecay(0.01f), _actionAlpha(0.01f), _actionBeta(0.02f), _actionTraceDecay(0.01f), _actionTraceTemperature(10.0f)
+			_qAlpha(0.01f), _qGamma(0.992f), _qTraceDecay(0.01f), _actionAlpha(0.01f), _actionBeta(0.2f), _actionTraceDecay(0.01f), _actionTraceTemperature(10.0f)
 		{}
 
 		void createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator);

@@ -33,7 +33,7 @@ int main() {
 
 	// ---------------------------------- RL Init ------------------------------------
 
-	sc::HTSLPVLV agentBlue;
+	/*sc::HTSLPVLV agentBlue;
 	sc::HTSLPVLV agentRed;
 
 	std::vector<sc::HTSLPVLV::InputType> inputTypes(20);
@@ -65,13 +65,13 @@ int main() {
 	//layerDescs[2]._height = 8;
 
 	agentBlue.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
-	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);
+	agentRed.createRandom(5, 4, 8, inputTypes, layerDescs, generator);*/
 
 	float rewardTimer = 0.0f;
 	float rewardTime = 0.25f;
 	float lastReward = 0.5f;
 
-	/*sc::HTSLSARSA agentBlue;
+	sc::HTSLSARSA agentBlue;
 	sc::HTSLSARSA agentRed;
 
 	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
@@ -94,7 +94,7 @@ int main() {
 	layerDescs[1]._height = 8;
 
 	agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
-	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);*/
+	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
 
 	//deep::FERL agentBlue;
 	//agentBlue.createRandom(12, 2, 32, 0.01f, generator);
@@ -384,7 +384,7 @@ int main() {
 			if (blueBounced)
 				reward = std::max(reward, 0.55f);
 
-			//reward = (reward * 2.0f - 1.0f) * 0.01f;
+			reward = (reward * 2.0f - 1.0f) * 0.01f;
 
 			//reward = (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
@@ -473,7 +473,7 @@ int main() {
 			if (redBounced)
 				reward = std::max(reward, 0.55f);
 
-			//reward = (reward * 2.0f - 1.0f) * 0.01f;
+			reward = (reward * 2.0f - 1.0f) * 0.01f;
 
 			//reward *= 0.05f;
 
