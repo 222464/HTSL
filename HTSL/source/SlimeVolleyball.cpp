@@ -719,6 +719,13 @@ int main() {
 
 			renderWindow.draw(s);
 		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::F)) {
+			for (int i = 0; i < 16; i++)
+				std::cout << agentRed.getHTSL().getPrediction(i) << std::endl;
+
+			std::cout << std::endl;
+		}
 		
 		renderWindow.display();
 	} while (!quit);

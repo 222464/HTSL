@@ -122,6 +122,16 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 }
 
 void HTSLSARSA::update(float reward, std::mt19937 &generator) {
+	float prederror = 0.0f;
+
+	for (int i = 0; i < _inputTypes.size(); i++) {
+		if (_inputTypes[i] == _state) {
+			prederror += std::pow(_htsl.getPrediction(i) - _htsl.getLayers().front()._rsc.getVisibleState(i), 2);
+		}
+	}
+
+	std::cout << "Pred error: " << prederror << std::endl;
+
 	for (int ni = 0; ni < _qNodes.size(); ni++)
 		_htsl.setInput(_qNodes[ni]._inputIndex, _prevNewQ);
 
@@ -136,7 +146,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 
 	for (int ni = 0; ni < _qNodes.size(); ni++) {
 		for (int ci = 0; ci < _qNodes[ni]._firstHiddenConnections.size(); ci++) {
-			qSum += _qNodes[ni]._firstHiddenConnections[ci]._weight * std::min(1.0f, std::max(0.0f, _htsl.getLayers().front()._predictionNodes[_qNodes[ni]._firstHiddenConnections[ci]._index]._state));
+			qSum += _qNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers().front()._predictionNodes[_qNodes[ni]._firstHiddenConnections[ci]._index]._state;
 		}
 	}
 
@@ -154,7 +164,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		for (int ci = 0; ci < _qNodes[ni]._firstHiddenConnections.size(); ci++) {
 			_qNodes[ni]._firstHiddenConnections[ci]._weight += alphaError * _qNodes[ni]._firstHiddenConnections[ci]._trace;
 
-			_qNodes[ni]._firstHiddenConnections[ci]._trace = std::max((1.0f - _qTraceDecay) * _qNodes[ni]._firstHiddenConnections[ci]._trace, std::min(1.0f, std::max(0.0f, _htsl.getLayers().front()._predictionNodes[_qNodes[ni]._firstHiddenConnections[ci]._index]._state)));
+			_qNodes[ni]._firstHiddenConnections[ci]._trace = std::max((1.0f - _qTraceDecay) * _qNodes[ni]._firstHiddenConnections[ci]._trace, _htsl.getLayers().front()._rsc.getHiddenBit(_qNodes[ni]._firstHiddenConnections[ci]._index));
 		}
 	}
 
@@ -173,7 +183,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		float sum = 0.0f;
 
 		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {
-			sum += _actionNodes[ni]._firstHiddenConnections[ci]._weight * std::min(1.0f, std::max(0.0f, _htsl.getLayers().front()._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state));
+			sum += _actionNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers().front()._rsc.getHiddenBit(_actionNodes[ni]._firstHiddenConnections[ci]._index);
 		}
 
 		_actionNodes[ni]._state = sum;// _htsl.getPrediction(_actionNodes[ni]._inputIndex);
@@ -189,7 +199,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		float delta = _actionNodes[ni]._output - _actionNodes[ni]._state;
 
 		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {
-			_actionNodes[ni]._firstHiddenConnections[ci]._trace = (1.0f - _actionTraceDecay) * _actionNodes[ni]._firstHiddenConnections[ci]._trace + _actionBeta * std::exp(-std::abs(_actionNodes[ni]._firstHiddenConnections[ci]._trace) * _actionTraceTemperature) * delta * std::min(1.0f, std::max(0.0f, _htsl.getLayers().front()._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state));
+			_actionNodes[ni]._firstHiddenConnections[ci]._trace = (1.0f - _actionTraceDecay) * _actionNodes[ni]._firstHiddenConnections[ci]._trace + _actionBeta * std::exp(-std::abs(_actionNodes[ni]._firstHiddenConnections[ci]._trace) * _actionTraceTemperature) * delta * _htsl.getLayers().front()._rsc.getHiddenBit(_actionNodes[ni]._firstHiddenConnections[ci]._index);
 		}
 	}
 
