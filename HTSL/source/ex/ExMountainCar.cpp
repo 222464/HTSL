@@ -18,14 +18,14 @@ float ExMountainCar::runStep(Agent &agent, float dt) {
 	std::vector<float> input(2);
 
 	input[0] = 0.5f * (_position + 0.52f);
-	input[1] = _velocity > 0.0f ? 1.0f : 0.0f;
+	input[1] = _velocity * 10.0f;
 
 	std::vector<float> output;
 
 	agent.getOutput(this, input, output, reward, dt);
 
 	float action = output[0];
-	std::cout << "A: " << action << std::endl;
+	//std::cout << "A: " << action << std::endl;
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 		action = -1.0f;

@@ -15,10 +15,14 @@ namespace sc {
 		struct Connection {
 			float _weight;
 			float _trace;
+			float _lastOutput;
+			float _averageOutput;
+			float _targetWeight;
+			float _prevWeight;
 			unsigned short _index;
 
 			Connection()
-				: _trace(0.0f)
+				: _trace(0.0f), _lastOutput(0.0f), _averageOutput(0.0f), _targetWeight(0.0f), _prevWeight(0.0f)
 			{}
 		};
 
@@ -61,9 +65,14 @@ namespace sc {
 		float _actionTraceDecay;
 		float _actionTraceTemperature;
 
+		float _actionAverageDecay;
+
+		float _actionWeightDetermineAlpha;
+
 		HTSLSARSA()
 			: _prevValue(0.0f), _prevNewQ(0.0f), _prevTdError(0.0f), _actionRandomizeChance(0.05f), _actionPerturbationStdDev(0.05f),
-			_qAlpha(0.005f), _qGamma(0.992f), _qTraceDecay(0.01f), _actionAlpha(0.1f), _actionBeta(0.1f), _actionTraceDecay(0.01f), _actionTraceTemperature(5.0f)
+			_qAlpha(0.005f), _qGamma(0.99f), _qTraceDecay(0.05f), _actionAlpha(0.8f), _actionBeta(1.0f), _actionTraceDecay(0.05f), _actionTraceTemperature(5.0f),
+			_actionAverageDecay(1.0f), _actionWeightDetermineAlpha(0.02f)
 		{}
 
 		void createRandom(int inputWidth, int inputHeight, int actionQRadius, const std::vector<InputType> &inputTypes, const std::vector<HTSL::LayerDesc> &layerDescs, std::mt19937 &generator);
