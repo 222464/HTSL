@@ -25,7 +25,7 @@ int main() {
 	// ---------------------------------- RL Init ------------------------------------
 
 	// Change experiments and agents here!
-	ex::ExMountainCar experiment;
+	ex::ExPoleBalancing experiment;
 
 	experiment.initializeVisualization();
 

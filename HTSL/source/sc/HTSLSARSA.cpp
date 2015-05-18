@@ -179,7 +179,7 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++)
 			sum += _actionNodes[ni]._firstHiddenConnections[ci]._weight * _htsl.getLayers().front()._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state;
 
-		_actionNodes[ni]._state = sum;// _htsl.getPrediction(_actionNodes[ni]._inputIndex);
+		_actionNodes[ni]._state = HTSL::sigmoid(sum);// _htsl.getPrediction(_actionNodes[ni]._inputIndex);
 
 		if (dist01(generator) < _actionRandomizeChance)
 			_actionNodes[ni]._output = dist01(generator);
@@ -187,7 +187,6 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 			_actionNodes[ni]._output = std::min(1.0f, std::max(0.0f, std::min(1.0f, std::max(0.0f, _actionNodes[ni]._state)) + perturbationDist(generator)));
 
 		// Update output data
-
 		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {
 			float assim = _htsl.getLayers().front()._predictionNodes[_actionNodes[ni]._firstHiddenConnections[ci]._index]._state;
 			

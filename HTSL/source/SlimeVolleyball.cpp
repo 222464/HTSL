@@ -72,27 +72,27 @@ int main() {
 	float rewardTime = 0.25f;
 	float lastReward = 0.5f;
 
-	sc::HTSLQ agentBlue;
-	sc::HTSLQ agentRed;
+	sc::HTSLSARSA agentBlue;
+	sc::HTSLSARSA agentRed;
 
-	std::vector<sc::HTSLQ::InputType> inputTypes(16);
+	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
 
 	for (int i = 0; i < 12; i++)
-		inputTypes[i] = sc::HTSLQ::_state;
+		inputTypes[i] = sc::HTSLSARSA::_state;
 
 	for (int i = 12; i < 14; i++)
-		inputTypes[i] = sc::HTSLQ::_action;
+		inputTypes[i] = sc::HTSLSARSA::_action;
 
 	for (int i = 14; i < 16; i++)
-		inputTypes[i] = sc::HTSLQ::_q;
+		inputTypes[i] = sc::HTSLSARSA::_q;
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 14;
-	layerDescs[0]._height = 14;
+	layerDescs[0]._width = 22;
+	layerDescs[0]._height = 22;
 
-	layerDescs[1]._width = 8;
-	layerDescs[1]._height = 8;
+	layerDescs[1]._width = 12;
+	layerDescs[1]._height = 12;
 
 	agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
 	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);

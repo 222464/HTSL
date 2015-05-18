@@ -35,13 +35,12 @@ namespace sc {
 			unsigned short _index;
 
 			float _weight;
-			float _div;
-			float _mult;
+			float _scalar;
 
 			float _falloff;
 
 			VisibleConnection()
-				: _div(1.0f), _mult(1.0f)
+				: _scalar(1.0f)
 			{}
 		};
 
