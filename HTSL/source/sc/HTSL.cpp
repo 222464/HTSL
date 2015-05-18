@@ -267,7 +267,7 @@ void HTSL::learn(float importance) {
 	}
 
 	for (int l = 0; l < _layers.size(); l++)
-		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._sparsity, _layerDescs[l]._rscLearnTolerance);
+		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._sparsity, _layerDescs[l]._rscLearnTolerance);
 }
 
 void HTSL::stepEnd() {

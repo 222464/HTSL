@@ -7,6 +7,7 @@
 
 #include <sc/HTSLPVLV.h>
 #include <sc/HTSLSARSA.h>
+#include <sc/HTSLQ.h>
 
 #include <deep/FERL.h>
 
@@ -71,19 +72,19 @@ int main() {
 	float rewardTime = 0.25f;
 	float lastReward = 0.5f;
 
-	sc::HTSLSARSA agentBlue;
-	sc::HTSLSARSA agentRed;
+	sc::HTSLQ agentBlue;
+	sc::HTSLQ agentRed;
 
-	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
+	std::vector<sc::HTSLQ::InputType> inputTypes(16);
 
 	for (int i = 0; i < 12; i++)
-		inputTypes[i] = sc::HTSLSARSA::_state;
+		inputTypes[i] = sc::HTSLQ::_state;
 
 	for (int i = 12; i < 14; i++)
-		inputTypes[i] = sc::HTSLSARSA::_action;
+		inputTypes[i] = sc::HTSLQ::_action;
 
 	for (int i = 14; i < 16; i++)
-		inputTypes[i] = sc::HTSLSARSA::_q;
+		inputTypes[i] = sc::HTSLQ::_q;
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 

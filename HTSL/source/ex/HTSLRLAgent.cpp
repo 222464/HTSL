@@ -11,15 +11,15 @@ void HTSLRLAgent::initialize(int numInputs, int numOutputs) {
 
 	int rootDim = std::ceil(std::sqrt(static_cast<float>(totalState)));
 
-	std::vector<sc::HTSLSARSA::InputType> inputTypes(rootDim * rootDim, sc::HTSLSARSA::_state);
+	std::vector<sc::HTSLQ::InputType> inputTypes(rootDim * rootDim, sc::HTSLQ::_state);
 
 	for (int i = 0; i < inputTypes.size(); i++) {
 		if (i < numInputs)
-			inputTypes[i] = sc::HTSLSARSA::_state;
+			inputTypes[i] = sc::HTSLQ::_state;
 		else if (i < numInputs + numOutputs)
-			inputTypes[i] = sc::HTSLSARSA::_action;
+			inputTypes[i] = sc::HTSLQ::_action;
 		else if (i < numInputs + numOutputs + numQValues)
-			inputTypes[i] = sc::HTSLSARSA::_q;
+			inputTypes[i] = sc::HTSLQ::_q;
 	}
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);

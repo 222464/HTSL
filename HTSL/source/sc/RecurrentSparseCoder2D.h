@@ -35,10 +35,13 @@ namespace sc {
 			unsigned short _index;
 
 			float _weight;
+			float _div;
+			float _mult;
 
 			float _falloff;
 
 			VisibleConnection()
+				: _div(1.0f), _mult(1.0f)
 			{}
 		};
 
@@ -46,7 +49,7 @@ namespace sc {
 			unsigned short _index;
 
 			float _weight;
-
+		
 			float _falloff;
 
 			HiddenConnection()
@@ -112,7 +115,7 @@ namespace sc {
 
 		void activate(float excitation = 1.0f);
 		void reconstruct();
-		void learn(float alpha, float betaVisible, float betaHidden, float gamma, float sparsity, float learnTolerance);
+		void learn(float alpha, float betaVisible, float betaHidden, float deltaVisible, float deltaHidden, float gamma, float sparsity, float learnTolerance);
 		void stepEnd();
 
 		float getRepresentationError() const;

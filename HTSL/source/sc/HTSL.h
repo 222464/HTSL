@@ -21,6 +21,8 @@ namespace sc {
 			float _rscAlpha;
 			float _rscBetaVisible;
 			float _rscBetaHidden;
+			float _rscDeltaVisible;
+			float _rscDeltaHidden;
 			float _rscGamma;
 			float _rscLearnTolerance;
 			float _rscMinLearnTolerance;
@@ -40,8 +42,8 @@ namespace sc {
 				: _width(16), _height(16),
 				_receptiveRadius(8), _inhibitionRadius(6), _recurrentRadius(8),
 				_feedbackRadius(8), _lateralRadius(8),
-				_sparsity(3.0f / 121.0f), _rscExcitation(1.0f),
-				_rscAlpha(0.8f), _rscBetaVisible(0.05f), _rscBetaHidden(0.05f), _rscGamma(0.03f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
+				_sparsity(10.0f / 121.0f), _rscExcitation(1.0f),
+				_rscAlpha(0.5f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscDeltaVisible(0.1f), _rscDeltaHidden(0.1f), _rscGamma(0.04f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
 				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.1f), _attentionAlpha(0.1f), _hiddenUsageDecay(0.02f), _lowUsagePreference(2.0f)
 			{}
 		};

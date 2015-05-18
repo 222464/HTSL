@@ -156,8 +156,8 @@ void HTSLSARSA::update(float reward, std::mt19937 &generator) {
 		}
 	}
 
-	float learnAction = std::pow(std::max(0.0f, _actionAlpha * tdError), 2.0f);
-	float unlearnAction = std::pow(std::max(0.0f, -_actionAlpha * tdError), 2.0f);
+	float learnAction = std::max(0.0f, _actionAlpha * tdError);
+	float unlearnAction = std::max(0.0f, -_actionAlpha * tdError);
 
 	for (int ni = 0; ni < _actionNodes.size(); ni++) {
 		for (int ci = 0; ci < _actionNodes[ni]._firstHiddenConnections.size(); ci++) {

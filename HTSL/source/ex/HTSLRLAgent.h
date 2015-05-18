@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Agent.h"
-#include <sc/HTSLSARSA.h>
+#include <sc/HTSLQ.h>
 
 namespace ex {
 	class HTSLRLAgent : public Agent {
 	public:
-		sc::HTSLSARSA _htslrl;
+		sc::HTSLQ _htslrl;
 	
 		std::mt19937 _generator;
 
