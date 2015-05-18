@@ -72,7 +72,7 @@ int main() {
 	float rewardTime = 0.25f;
 	float lastReward = 0.5f;
 
-	sc::HTSLSARSA agentBlue;
+	//sc::HTSLSARSA agentBlue;
 	sc::HTSLSARSA agentRed;
 
 	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
@@ -86,15 +86,18 @@ int main() {
 	for (int i = 14; i < 16; i++)
 		inputTypes[i] = sc::HTSLSARSA::_q;
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
+	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 22;
-	layerDescs[0]._height = 22;
+	layerDescs[0]._width = 28;
+	layerDescs[0]._height = 28;
 
-	layerDescs[1]._width = 12;
-	layerDescs[1]._height = 12;
+	layerDescs[1]._width = 18;
+	layerDescs[1]._height = 18;
 
-	agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
+	layerDescs[2]._width = 12;
+	layerDescs[2]._height = 12;
+
+	//agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
 	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
 
 	//deep::FERL agentBlue;
@@ -131,8 +134,8 @@ int main() {
 	blue._velocity = sf::Vector2f(0.0f, 0.0f);
 	red._position = fieldCenter + sf::Vector2f(200.0f, 0.0f);
 	red._velocity = sf::Vector2f(0.0f, 0.0f);
-	ball._position = fieldCenter + sf::Vector2f(0.0f, -300.0f);
-	ball._velocity = sf::Vector2f((dist01(generator) * 2.0f - 1.0f) * 100.0f, 0.0f);
+	ball._position = fieldCenter + sf::Vector2f(2.0f, -300.0f);
+	ball._velocity = sf::Vector2f((dist01(generator)) * 600.0f, -(dist01(generator)) * 500.0f);
 
 	sf::Texture backgroundTexture;
 	backgroundTexture.loadFromFile("resources/slimevolleyball/background.png");
@@ -208,8 +211,8 @@ int main() {
 				blue._velocity = sf::Vector2f(0.0f, 0.0f);
 				red._position = fieldCenter + sf::Vector2f(200.0f, 0.0f);
 				red._velocity = sf::Vector2f(0.0f, 0.0f);
-				ball._position = fieldCenter + sf::Vector2f(0.0f, -300.0f);
-				ball._velocity = sf::Vector2f((dist01(generator) * 2.0f - 1.0f) * 100.0f, 0.0f);
+				ball._position = fieldCenter + sf::Vector2f(2.0f, -300.0f);
+				ball._velocity = sf::Vector2f((dist01(generator)) * 600.0f, -(dist01(generator)) * 500.0f);
 			}
 
 			// To wall
@@ -306,7 +309,7 @@ int main() {
 		}
 
 		// Blue slime
-		/*{		
+		{		
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
 			blue._position += blue._velocity * dt;
@@ -341,10 +344,10 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}*/
+		}
 
 		// Blue slime
-		{
+		/*{
 			const float scalar = 0.001f;
 			// Percepts
 			std::vector<float> inputs(12);
@@ -385,7 +388,7 @@ int main() {
 			if (blueBounced)
 				reward = std::max(reward, 0.55f);
 
-			reward = (reward * 2.0f - 1.0f) * 0.01f;
+			reward = (reward * 2.0f - 1.0f) * 0.01f - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
 			//reward = (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
@@ -430,7 +433,7 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}
+		}*/
 
 		// Red slime
 		{
@@ -459,7 +462,7 @@ int main() {
 			for (int i = 0; i < 12; i++)
 				agentRed.setState(i, inputs[i]);
 
-			float reward = (ball._position.x < fieldCenter.x && prevBallX > fieldCenter.x ? 1.0f : 0.5f) * 0.5f + (scoreBlue > prevScoreBlue ? 0.0f : 0.5f) * 0.5f;
+			float reward = (ball._position.x < fieldCenter.x && prevBallX >= fieldCenter.x ? 1.0f : 0.5f);
 			
 			if (reward != 0.5f) {
 				lastReward = reward = reward > 0.5f ? 1.0f : 0.0f;
@@ -474,7 +477,7 @@ int main() {
 			if (redBounced)
 				reward = std::max(reward, 0.55f);
 
-			reward = (reward * 2.0f - 1.0f) * 0.01f;
+			reward = (reward * 2.0f - 1.0f) * 0.1f - std::abs(ball._position.x - red._position.x) * 0.008f;
 
 			//reward *= 0.05f;
 
@@ -652,7 +655,7 @@ int main() {
 
 			float alignment = 0.0f;
 
-			for (int l = 0; l < agentBlue.getHTSL().getLayers().size(); l++) {
+			/*for (int l = 0; l < agentBlue.getHTSL().getLayers().size(); l++) {
 				sf::Image sdr;
 				sdr.create(agentBlue.getHTSL().getLayerDescs()[l]._width, agentBlue.getHTSL().getLayerDescs()[l]._height);
 
@@ -675,7 +678,7 @@ int main() {
 				renderWindow.draw(sdrs);
 
 				alignment += scale * sdr.getSize().x;
-			}
+			}*/
 
 			alignment = 0.0f;
 
