@@ -17,8 +17,8 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 
 	int actionQSize = std::pow(actionQRadius * 2 + 1, 2);
 
-	float visibleToHiddenWidth = static_cast<float>(layerDescs.front()._width) / static_cast<float>(inputWidth);
-	float visibleToHiddenHeight = static_cast<float>(layerDescs.front()._height) / static_cast<float>(inputHeight);
+	float visibleToHiddenWidth = static_cast<float>(layerDescs.front()._width + 1) / static_cast<float>(inputWidth + 1);
+	float visibleToHiddenHeight = static_cast<float>(layerDescs.front()._height + 1) / static_cast<float>(inputHeight + 1);
 
 	for (int vi = 0; vi < _inputTypes.size(); vi++) {
 		int vx = vi % inputWidth;
@@ -34,8 +34,8 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 			actionNode._inputIndex = vi;
 			actionNode._firstHiddenConnections.reserve(actionQSize);
 
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
+			int centerX = std::round(visibleToHiddenWidth * (vx + 0.5f));
+			int centerY = std::round(visibleToHiddenHeight * (vy + 0.5f));
 
 			float dist2 = 0.0f;
 
@@ -78,8 +78,8 @@ void HTSLSARSA::createRandom(int inputWidth, int inputHeight, int actionQRadius,
 			qNode._inputIndex = vi;
 			qNode._firstHiddenConnections.reserve(actionQSize);
 
-			int centerX = std::round(visibleToHiddenWidth * vx);
-			int centerY = std::round(visibleToHiddenHeight * vy);
+			int centerX = std::round(visibleToHiddenWidth * (vx + 0.5f));
+			int centerY = std::round(visibleToHiddenHeight * (vy + 0.5f));
 
 			float dist2 = 0.0f;
 

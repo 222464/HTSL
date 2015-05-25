@@ -7,7 +7,8 @@
 
 #include <ex/Agent.h>
 #include <ex/RandomAgent.h>
-#include <ex/HTSLRLAgent.h>
+#include <ex/HTSLSARSAAgent.h>
+#include <ex/HTSLQAgent.h>
 #include <ex/Experiment.h>
 #include <ex/ExPoleBalancing.h>
 #include <ex/ExMountainCar.h>
@@ -29,7 +30,7 @@ int main() {
 
 	experiment.initializeVisualization();
 
-	ex::HTSLRLAgent agent;
+	ex::HTSLSARSAAgent agent;
 
 	agent.initialize(experiment.getNumInputs(), experiment.getNumOutputs());
 
