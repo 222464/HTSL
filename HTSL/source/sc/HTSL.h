@@ -43,7 +43,7 @@ namespace sc {
 				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
 				_feedbackRadius(6), _lateralRadius(6),
 				_sparsity(0.04f), _rscExcitation(1.0f),
-				_rscAlpha(0.8f), _rscBetaVisible(0.04f), _rscBetaHidden(0.04f), _rscDeltaVisible(0.0f), _rscDeltaHidden(0.0f), _rscGamma(0.0f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
+				_rscAlpha(0.8f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscDeltaVisible(0.01f), _rscDeltaHidden(0.01f), _rscGamma(0.1f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
 				_nodeAlphaLateral(0.15f), _nodeAlphaFeedback(0.15f), _nodeBiasAlpha(0.15f), _attentionAlpha(0.5f), _hiddenUsageDecay(0.02f), _lowUsagePreference(0.0f)
 			{}
 		};
@@ -68,8 +68,6 @@ namespace sc {
 			float _activationPrev;
 			float _state;
 			float _statePrev;
-			float _bit;
-			float _bitPrev;
 
 			float _hiddenUsage;
 
@@ -81,7 +79,7 @@ namespace sc {
 			float _error;
 
 			PredictionNode()
-				: _activation(0.0f), _activationPrev(0.0f), _state(0.0f), _statePrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bias(0.0f), _error(0.0f), _hiddenUsage(1.0f), _reconstructedPrediction(0.0f)
+				: _activation(0.0f), _activationPrev(0.0f), _state(0.0f), _statePrev(0.0f), _bias(0.0f), _error(0.0f), _hiddenUsage(1.0f), _reconstructedPrediction(0.0f)
 			{}
 		};
 

@@ -103,7 +103,7 @@ int main() {
 
 			sparseCoder.reconstruct();
 
-			sparseCoder.learn(0.5f, 0.01f, 0.01f, 0.1f, 0.1f, 0.2f, 0.05f, 0.001f);
+			sparseCoder.learn(0.5f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.05f, 0.0001f);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
@@ -220,7 +220,7 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				if (sparseCoder.getHiddenBit(sx + sy * codeWidth) > 0.0f) {
+				if (sparseCoder.getHiddenState(sx + sy * codeWidth) > 0.0f) {
 					sf::RectangleShape rs;
 
 					rs.setPosition(sx * dim * scale, sy * dim * scale);
@@ -238,7 +238,7 @@ int main() {
 		sampleSprite.setTexture(sampleTexture);
 
 		sampleSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - sampleImage.getSize().x, 0.0f));
-		
+
 		renderWindow.draw(sampleSprite);
 
 		sf::Sprite reconstructionSprite;
@@ -250,7 +250,7 @@ int main() {
 
 		renderWindow.display();
 	} while (!quit);
-	
+
 	return 0;
 }
 

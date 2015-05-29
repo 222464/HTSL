@@ -57,11 +57,11 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 8;
-	layerDescs[0]._height = 8;
+	layerDescs[0]._width = 12;
+	layerDescs[0]._height = 12;
 
-	layerDescs[1]._width = 8;
-	layerDescs[1]._height = 8;
+	layerDescs[1]._width = 10;
+	layerDescs[1]._height = 10;
 
 	layerDescs[2]._width = 8;
 	layerDescs[2]._height = 8;
@@ -69,7 +69,7 @@ int main() {
 	htsl.createRandom(rootSize, rootSize, layerDescs, generator);
 
 	// Train
-	for (int iter = 0; iter < 200; iter++) {
+	for (int iter = 0; iter < 2000; iter++) {
 		for (int c = 0; c < text.length(); c++) {
 			for (int i = 0; i < uniqueChars.size(); i++)
 				htsl.setInput(i, 0.0f);

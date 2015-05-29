@@ -48,7 +48,7 @@ namespace sc {
 			unsigned short _index;
 
 			float _weight;
-		
+
 			float _falloff;
 
 			HiddenConnection()
@@ -78,16 +78,13 @@ namespace sc {
 			float _bitPrev;
 			float _bitPrevPrev;
 			float _error;
-			float _activationVisible;
-			float _activationHidden;
 			float _activation;
 			float _reconstruction; // From recurrent connections
 			float _attention;
 			float _inhibition;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _activationVisible(0.0f), _activationHidden(0.0f),
-				_reconstruction(0.0f), _attention(0.0f), _inhibition(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _attention(0.0f), _inhibition(0.0f)
 			{}
 		};
 
@@ -102,7 +99,7 @@ namespace sc {
 			{}
 		};
 
-	private:	
+	private:
 		int _visibleWidth, _visibleHeight;
 		int _hiddenWidth, _hiddenHeight;
 		int _receptiveRadius;

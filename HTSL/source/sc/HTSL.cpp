@@ -130,7 +130,7 @@ void HTSL::update() {
 				_layers[l]._rsc.setVisibleInput(vi, _layers[prevLayerIndex]._rsc.getHiddenState(vi));
 		}
 
-		_layers[l]._rsc.activate(_layerDescs[l]._rscExcitation);
+		_layers[l]._rsc.activate();
 		_layers[l]._rsc.reconstruct();
 	}
 
@@ -176,11 +176,7 @@ void HTSL::update() {
 			for (int ci = 0; ci < rsc._hidden[ni]._hiddenHiddenConnections.size(); ci++)
 				inhibition += rsc._hidden[ni]._hiddenHiddenConnections[ci]._weight * rsc._hidden[ni]._hiddenHiddenConnections[ci]._falloff * (_layers[l]._predictionNodes[rsc._hidden[ni]._hiddenHiddenConnections[ci]._index]._activation > node._activation ? 1.0f : 0.0f);
 				
-			node._state = std::max(0.0f, _layerDescs[l]._rscExcitation - inhibition * sigmoid(rsc._hidden[ni]._bias));
-
-			node._bit = node._state > 0.0f ? 1.0f : 0.0f;
-
-			node._state = node._bit;
+			node._state = (node._activation - inhibition) > 0.0f ? 1.0f : 0.0f;
 
 			// Also update hidden usage
 			node._hiddenUsage = (1.0f - _layerDescs[l]._hiddenUsageDecay) * node._hiddenUsage + _layerDescs[l]._hiddenUsageDecay * rsc.getHiddenState(ni);
@@ -267,7 +263,7 @@ void HTSL::learn(float importance) {
 	}
 
 	for (int l = 0; l < _layers.size(); l++)
-		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._sparsity, _layerDescs[l]._rscLearnTolerance);
+		_layers[l]._rsc.learn(_layerDescs[l]._rscAlpha, _layerDescs[l]._rscBetaVisible, _layerDescs[l]._rscBetaHidden, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._rscDeltaHidden, _layerDescs[l]._rscGamma, _layerDescs[l]._rscDeltaVisible, _layerDescs[l]._sparsity);
 }
 
 void HTSL::stepEnd() {
@@ -277,7 +273,6 @@ void HTSL::stepEnd() {
 		for (int ni = 0; ni < _layers[l]._predictionNodes.size(); ni++) {
 			_layers[l]._predictionNodes[ni]._activationPrev = _layers[l]._predictionNodes[ni]._activation;
 			_layers[l]._predictionNodes[ni]._statePrev = _layers[l]._predictionNodes[ni]._state;
-			_layers[l]._predictionNodes[ni]._bitPrev = _layers[l]._predictionNodes[ni]._bit;
 			_layers[l]._predictionNodes[ni]._reconstructedPredictionPrev = _layers[l]._predictionNodes[ni]._reconstructedPrediction;
 		}
 	}
