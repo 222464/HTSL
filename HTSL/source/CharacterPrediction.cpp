@@ -14,9 +14,59 @@
 #include <iostream>
 
 #include <sc/HTSL.h>
+#include <hyp/BayesianOptimizer.h>
+
+void getVars(sc::HTSL &htsl, std::vector<float> &vars) {
+	if (vars.size() != 13)
+		vars.resize(13);
+
+	int index = 0;
+
+	vars[index++] = htsl.getLayerDescs()[0]._sparsity;
+	vars[index++] = htsl.getLayerDescs()[0]._rscAlpha;
+	vars[index++] = htsl.getLayerDescs()[0]._rscBetaVisible;
+	vars[index++] = htsl.getLayerDescs()[0]._rscBetaHidden;
+	vars[index++] = htsl.getLayerDescs()[0]._rscDeltaVisible;
+	vars[index++] = htsl.getLayerDescs()[0]._rscDeltaHidden;
+	vars[index++] = htsl.getLayerDescs()[0]._rscGamma;
+	vars[index++] = htsl.getLayerDescs()[0]._nodeAlphaLateral;
+	vars[index++] = htsl.getLayerDescs()[0]._nodeAlphaFeedback;
+	vars[index++] = htsl.getLayerDescs()[0]._nodeBiasAlpha;
+	vars[index++] = htsl.getLayerDescs()[0]._attentionAlpha;
+	vars[index++] = htsl.getLayerDescs()[0]._hiddenUsageDecay;
+	vars[index++] = htsl.getLayerDescs()[0]._lowUsagePreference;
+}
+
+void setVars(sc::HTSL &htsl, const std::vector<float> &vars) {
+	for (int l = 0; l < htsl.getLayerDescs().size(); l++) {
+		int index = 0;
+
+		htsl.getLayerDescs()[0]._sparsity = vars[index++];
+		htsl.getLayerDescs()[0]._rscAlpha = vars[index++];
+		htsl.getLayerDescs()[0]._rscBetaVisible = vars[index++];
+		htsl.getLayerDescs()[0]._rscBetaHidden = vars[index++];
+		htsl.getLayerDescs()[0]._rscDeltaVisible = vars[index++];
+		htsl.getLayerDescs()[0]._rscDeltaHidden = vars[index++];
+		htsl.getLayerDescs()[0]._rscGamma = vars[index++];
+		htsl.getLayerDescs()[0]._nodeAlphaLateral = vars[index++];
+		htsl.getLayerDescs()[0]._nodeAlphaFeedback = vars[index++];
+		htsl.getLayerDescs()[0]._nodeBiasAlpha = vars[index++];
+		htsl.getLayerDescs()[0]._attentionAlpha = vars[index++];
+		htsl.getLayerDescs()[0]._hiddenUsageDecay = vars[index++];
+		htsl.getLayerDescs()[0]._lowUsagePreference = vars[index++];
+	}
+}
 
 int main() {
 	std::mt19937 generator(time(nullptr));
+
+	hyp::BayesianOptimizer bo;
+
+	std::vector<float> minBounds(13, 0.0f);
+	std::vector<float> maxBounds(13, 1.0f);
+
+	bo.create(13, minBounds, maxBounds);
+	bo.generateNewVariables(generator);
 
 	std::ifstream fromFile("corpus.txt");
 
@@ -53,78 +103,122 @@ int main() {
 
 	int rootSize = std::ceil(std::sqrt(static_cast<float>(uniqueChars.size())));
 
-	sc::HTSL htsl;
-
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
-	layerDescs[0]._width = 12;
-	layerDescs[0]._height = 12;
+	layerDescs[0]._width = 8;
+	layerDescs[0]._height = 8;
 
-	layerDescs[1]._width = 10;
-	layerDescs[1]._height = 10;
+	layerDescs[1]._width = 6;
+	layerDescs[1]._height = 6;
 
-	layerDescs[2]._width = 8;
-	layerDescs[2]._height = 8;
+	layerDescs[2]._width = 4;
+	layerDescs[2]._height = 4;
 
-	htsl.createRandom(rootSize, rootSize, layerDescs, generator);
+	{
+		sc::HTSL htsl;
 
-	// Train
-	for (int iter = 0; iter < 2000; iter++) {
-		for (int c = 0; c < text.length(); c++) {
-			for (int i = 0; i < uniqueChars.size(); i++)
-				htsl.setInput(i, 0.0f);
+		htsl.createRandom(rootSize, rootSize, layerDescs, generator);
 
-			htsl.setInput(charToInputIndex[text[c]], 1.0f);
+		std::vector<float> vars;
+		getVars(htsl, vars);
 
-			htsl.update();
-			htsl.learn();
-			htsl.stepEnd();
-
-			if (c % 100 == 0)
-				std::cout << "Steps: " << c << std::endl;
-		}
-
-		std::cout << "Iteration " << iter << std::endl;
+		bo.setCurrentVariables(vars);
 	}
 
-	// Generate
-	std::cout << text[0];
+	float maxFitness = -99999.0f;
+	std::vector<float> maxVars = bo.getCurrentVariables();
 
-	for (int i = 0; i < uniqueChars.size(); i++)
-		htsl.setInput(i, 0.0f);
+	for (int boi = 0; boi < 1000; boi++) {
+		std::cout << "Bayesian optimization iteration " << boi << std::endl;
 
-	htsl.setInput(charToInputIndex[text[0]], 1.0f);
+		sc::HTSL htsl;
 
-	htsl.update();
-	htsl.stepEnd();
+		htsl.createRandom(rootSize, rootSize, layerDescs, generator);
 
-	for (int c = 0; c < 100; c++) {
-		float maxIndex = 0;
+		setVars(htsl, bo.getCurrentVariables());
 
-		for (int i = 1; i < uniqueChars.size(); i++)
-			if (htsl.getPrediction(i) > htsl.getPrediction(maxIndex))
-				maxIndex = i;
+		// Train
+		for (int iter = 0; iter < 20; iter++) {
+			for (int c = 0; c < text.length(); c++) {
+				for (int i = 0; i < uniqueChars.size(); i++)
+					htsl.setInput(i, 0.0f);
 
-		std::cout << inputIndexToChar[maxIndex];
+				htsl.setInput(charToInputIndex[text[c]], 1.0f);
 
+				htsl.update();
+				htsl.learn();
+				htsl.stepEnd();
+
+				if (c % 100 == 0)
+					std::cout << "Steps: " << c << std::endl;
+			}
+
+			std::cout << "Train iteration " << iter << std::endl;
+		}
+
+		// Generate
 		for (int i = 0; i < uniqueChars.size(); i++)
 			htsl.setInput(i, 0.0f);
 
-		htsl.setInput(maxIndex, 1.0f);
-
-		//for (int i = 0; i < uniqueChars.size(); i++)
-		//	htsl.setInput(i, htsl.getPrediction(i));
+		htsl.setInput(charToInputIndex[text[0]], 1.0f);
 
 		htsl.update();
 		htsl.stepEnd();
 
-		/*for (int x = 0; x < layerDescs[0]._width; x++) {
-			for (int y = 0; y < layerDescs[0]._height; y++) {
-				std::cout << (htsl.getLayers()[0]._rsc.getHiddenBit(x, y) > 0.0f ? "1" : "0");
-			}
+		std::cout << "Example string: " << std::endl;
 
-			std::cout << std::endl;
-		}*/
+		std::cout << text[0];
+
+		int numCorrect = 0;
+
+		for (int c = 1; c < text.length() - 1; c++) {
+			int maxIndex = 0;
+
+			for (int i = 1; i < uniqueChars.size(); i++)
+				if (htsl.getPrediction(i) > htsl.getPrediction(maxIndex))
+					maxIndex = i;
+
+			std::cout << inputIndexToChar[maxIndex];
+
+			if (inputIndexToChar[maxIndex] == text[c])
+				numCorrect++;
+
+			for (int i = 0; i < uniqueChars.size(); i++)
+				htsl.setInput(i, 0.0f);
+
+			htsl.setInput(maxIndex, 1.0f);
+
+			htsl.update();
+			htsl.stepEnd();
+		}
+
+		std::cout << std::endl;
+
+		float fitness = static_cast<float>(numCorrect + 1) / static_cast<float>(text.length());
+
+		std::cout << "Fitness: " << fitness * 100.0f << "%" << std::endl;
+
+		std::cout << "Tested Parameters: " << std::endl;
+
+		for (int i = 0; i < bo.getCurrentVariables().size(); i++)
+			std::cout << bo.getCurrentVariables()[i] << " ";
+
+		std::cout << std::endl;
+
+		std::cout << "Best Parameters (fitness of " << (maxFitness * 100.0f) << "): " << std::endl;
+
+		for (int i = 0; i < maxVars.size(); i++)
+			std::cout << maxVars[i] << " ";
+
+		std::cout << std::endl;
+
+		if (fitness > maxFitness) {
+			maxVars = bo.getCurrentVariables();
+			maxFitness = fitness;
+		}
+
+		bo.update(fitness);
+		bo.generateNewVariables(generator);
 	}
 
 	return 0;

@@ -88,7 +88,7 @@ int main() {
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
 	const int useSequence = 0;
-	const int useLength = 50;
+	const int useLength = 20;
 
 	std::unordered_set<int> usedNotes;
 
@@ -120,16 +120,16 @@ int main() {
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(2);
 
-	layerDescs[0]._width = 16;
-	layerDescs[0]._height = 16;
+	layerDescs[0]._width = 8;
+	layerDescs[0]._height = 8;
 
-	layerDescs[1]._width = 10;
-	layerDescs[1]._height = 10;
+	layerDescs[1]._width = 6;
+	layerDescs[1]._height = 6;
 
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 100; loop++) {
+	for (int loop = 0; loop < 50; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 
@@ -176,14 +176,14 @@ int main() {
 		for (int i = 0; i < usedNotes.size(); i++)
 			htsl.setInput(i, 0.0f);
 
-		for (int n = 0; n < frame._notes.size(); n++)
-			htsl.setInput(noteToInput[frame._notes[n]], 1.0f);
+		for (std::unordered_set<int>::iterator it = predictedNotes.begin(); it != predictedNotes.end(); it++)
+			htsl.setInput(noteToInput[*it], 1.0f);
 
 		htsl.update();
 
-		for (int x = 0; x < layerDescs[1]._width; x++) {
-			for (int y = 0; y < layerDescs[1]._height; y++) {
-				std::cout << (htsl.getLayers()[1]._rsc.getHiddenBit(x, y) > 0.0f ? "1" : "0");
+		for (int x = 0; x < layerDescs[0]._width; x++) {
+			for (int y = 0; y < layerDescs[0]._height; y++) {
+				std::cout << (htsl.getLayers()[0]._rsc.getHiddenBit(x, y) > 0.0f ? "1" : "0");
 			}
 
 			std::cout << std::endl;

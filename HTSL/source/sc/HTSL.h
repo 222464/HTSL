@@ -42,9 +42,9 @@ namespace sc {
 				: _width(16), _height(16),
 				_receptiveRadius(6), _inhibitionRadius(6), _recurrentRadius(6),
 				_feedbackRadius(6), _lateralRadius(6),
-				_sparsity(0.04f), _rscExcitation(1.0f),
-				_rscAlpha(0.8f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscDeltaVisible(0.01f), _rscDeltaHidden(0.01f), _rscGamma(0.1f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
-				_nodeAlphaLateral(0.15f), _nodeAlphaFeedback(0.15f), _nodeBiasAlpha(0.15f), _attentionAlpha(0.5f), _hiddenUsageDecay(0.02f), _lowUsagePreference(0.0f)
+				_sparsity(0.05f), _rscExcitation(1.0f),
+				_rscAlpha(0.8f), _rscBetaVisible(0.1f), _rscBetaHidden(0.1f), _rscDeltaVisible(0.01f), _rscDeltaHidden(0.01f), _rscGamma(0.01f), _rscLearnTolerance(0.01f), _rscMinLearnTolerance(0.0f),
+				_nodeAlphaLateral(0.1f), _nodeAlphaFeedback(0.1f), _nodeBiasAlpha(0.1f), _attentionAlpha(0.5f), _hiddenUsageDecay(0.02f), _lowUsagePreference(0.0f)
 			{}
 		};
 
@@ -128,7 +128,7 @@ namespace sc {
 		void learn(float importance = 1.0f);
 		void stepEnd();
 
-		const std::vector<LayerDesc> &getLayerDescs() const {
+		std::vector<LayerDesc> &getLayerDescs() {
 			return _layerDescs;
 		}
 

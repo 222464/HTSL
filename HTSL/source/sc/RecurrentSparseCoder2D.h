@@ -93,9 +93,10 @@ namespace sc {
 			float _inputPrev;
 			float _reconstruction;
 			float _reconstructionPrev;
+			float _error;
 
 			VisibleNode()
-				: _input(0.0f), _inputPrev(0.0f), _reconstruction(0.0f), _reconstructionPrev(0.0f)
+				: _input(0.0f), _inputPrev(0.0f), _reconstruction(0.0f), _reconstructionPrev(0.0f), _error(0.0f)
 			{}
 		};
 
@@ -114,6 +115,7 @@ namespace sc {
 
 		void activate(float excitation = 1.0f);
 		void reconstruct();
+		void attentionalError();
 		void learn(float alpha, float betaVisible, float betaHidden, float deltaVisible, float deltaHidden, float gamma, float sparsity, float learnTolerance);
 		void stepEnd();
 
