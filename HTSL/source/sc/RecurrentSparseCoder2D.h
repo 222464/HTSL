@@ -115,7 +115,6 @@ namespace sc {
 
 		void activate(float excitation = 1.0f);
 		void reconstruct();
-		void attentionalError();
 		void learn(float alpha, float betaVisible, float betaHidden, float deltaVisible, float deltaHidden, float gamma, float sparsity, float learnTolerance);
 		void stepEnd();
 

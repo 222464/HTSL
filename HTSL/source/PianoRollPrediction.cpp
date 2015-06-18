@@ -88,7 +88,7 @@ int main() {
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
 	const int useSequence = 0;
-	const int useLength = 20;
+	const int useLength = 40;
 
 	std::unordered_set<int> usedNotes;
 
@@ -126,10 +126,13 @@ int main() {
 	layerDescs[1]._width = 6;
 	layerDescs[1]._height = 6;
 
+	layerDescs[2]._width = 4;
+	layerDescs[2]._height = 4;
+
 	htsl.createRandom(squareDim, squareDim, layerDescs, generator);
 
 	// Train on sequence
-	for (int loop = 0; loop < 50; loop++) {
+	for (int loop = 0; loop < 200; loop++) {
 		for (int f = 0; f < train._sequences[useSequence]._frames.size() && f < useLength; f++) {
 			Frame &frame = train._sequences[useSequence]._frames[f];
 

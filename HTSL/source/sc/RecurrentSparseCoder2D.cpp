@@ -193,13 +193,17 @@ void RecurrentSparseCoder2D::reconstruct() {
 
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++) {
-			_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._visibleHiddenConnections[ci]._weight * _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._state;
-			visibleSums[_hidden[hi]._visibleHiddenConnections[ci]._index] += _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			//_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._visibleHiddenConnections[ci]._weight * _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			//visibleSums[_hidden[hi]._visibleHiddenConnections[ci]._index] += _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._visibleHiddenConnections[ci]._weight * _hidden[hi]._state;
+			visibleSums[_hidden[hi]._visibleHiddenConnections[ci]._index] += _hidden[hi]._state;
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++) {
-			_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight * _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._state;
-			hiddenSums[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] += _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			//_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight * _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			//hiddenSums[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] += _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._state;
+			_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._reconstruction += _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight * _hidden[hi]._state;
+			hiddenSums[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] += _hidden[hi]._state;
 		}
 	}
 
@@ -210,41 +214,12 @@ void RecurrentSparseCoder2D::reconstruct() {
 		_hidden[hi]._reconstruction /= std::max(0.0001f, hiddenSums[hi]);
 }
 
-void RecurrentSparseCoder2D::attentionalError() {
-	std::vector<float> visibleSums(_visible.size(), 0.0f);
-	std::vector<float> hiddenSums(_hidden.size(), 0.0f);
-
-	for (int vi = 0; vi < _visible.size(); vi++)
-		_visible[vi]._error = 0.0f;
-
-	for (int hi = 0; hi < _hidden.size(); hi++)
-		_hidden[hi]._error = 0.0f;
-
-	for (int hi = 0; hi < _hidden.size(); hi++) {
-		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++) {
-			_visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._error += _hidden[hi]._visibleHiddenConnections[ci]._weight * _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._attention;
-			visibleSums[_hidden[hi]._visibleHiddenConnections[ci]._index] += _hidden[hi]._visibleHiddenConnections[ci]._scalar * _hidden[hi]._attention;
-		}
-
-		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++) {
-			_hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._error += _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight * _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._attention;
-			hiddenSums[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] += _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar * _hidden[hi]._attention;
-		}
-	}
-
-	for (int vi = 0; vi < _visible.size(); vi++)
-		_visible[vi]._error /= std::max(0.0001f, visibleSums[vi]);
-
-	for (int hi = 0; hi < _hidden.size(); hi++)
-		_hidden[hi]._error /= std::max(0.0001f, hiddenSums[hi]);
-}
-
 void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHidden, float deltaVisible, float deltaHidden, float gamma, float sparsity, float learnTolerance) {
 	std::vector<float> visibleErrors(_visible.size(), 0.0f);
 	std::vector<float> hiddenErrors(_hidden.size(), 0.0f);
 
 	for (int vi = 0; vi < _visible.size(); vi++)
-		visibleErrors[vi] = _visible[vi]._input - _visible[vi]._reconstruction + _vis;
+		visibleErrors[vi] = _visible[vi]._input - _visible[vi]._reconstruction;
 
 	for (int vi = 0; vi < _hidden.size(); vi++)
 		hiddenErrors[vi] = _hidden[vi]._statePrev - _hidden[vi]._reconstruction;
@@ -256,12 +231,16 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 
 		if (learn > 0.0f) {
 			for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++) {
-				_hidden[hi]._visibleHiddenConnections[ci]._scalar = std::max(0.0001f, _hidden[hi]._visibleHiddenConnections[ci]._scalar + deltaVisible * learn * visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] * _hidden[hi]._visibleHiddenConnections[ci]._weight);
+				//float delta = _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input - _hidden[hi]._visibleHiddenConnections[ci]._weight;
+
+				//_hidden[hi]._visibleHiddenConnections[ci]._scalar += deltaVisible * learn * (1.0f / std::max(0.0001f, visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index] * visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index]) - _hidden[hi]._visibleHiddenConnections[ci]._scalar);
 				_hidden[hi]._visibleHiddenConnections[ci]._weight += betaVisible * learn * visibleErrors[_hidden[hi]._visibleHiddenConnections[ci]._index];
 			}
 
 			for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++) {
-				_hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar = std::max(0.0001f, _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar + deltaHidden * learn * hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] * _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight);
+				//float delta = _hidden[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]._statePrev - _hidden[hi]._hiddenPrevHiddenConnections[ci]._weight;
+				
+				//_hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar += deltaHidden * learn * (1.0f / std::max(0.0001f, hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index] * hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index]) - _hidden[hi]._hiddenPrevHiddenConnections[ci]._scalar);
 				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight += betaHidden * learn * hiddenErrors[_hidden[hi]._hiddenPrevHiddenConnections[ci]._index];
 			}
 
@@ -270,7 +249,7 @@ void RecurrentSparseCoder2D::learn(float alpha, float betaVisible, float betaHid
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::max(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * (_hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation < _hidden[hi]._activation ? 1.0f : 0.0f) - sparsitySquared * _hidden[hi]._inhibition));
+			_hidden[hi]._hiddenHiddenConnections[ci]._weight = std::max(0.0f, _hidden[hi]._hiddenHiddenConnections[ci]._weight + alpha * (_hidden[hi]._bit * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation < _hidden[hi]._activation ? 1.0f : 0.0f) - sparsitySquared));
 
 		_hidden[hi]._bias += gamma * (_hidden[hi]._bit - sparsity);
 	}
