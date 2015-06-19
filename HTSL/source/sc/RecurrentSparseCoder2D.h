@@ -35,12 +35,10 @@ namespace sc {
 			unsigned short _index;
 
 			float _weight;
-			float _scalar;
 
 			float _falloff;
 
 			VisibleConnection()
-				: _scalar(1.0f)
 			{}
 		};
 
@@ -55,15 +53,6 @@ namespace sc {
 			{}
 		};
 
-		struct ReconstructionConnection {
-			unsigned short _index;
-
-			float _weight;
-
-			ReconstructionConnection()
-			{}
-		};
-
 		struct HiddenNode {
 			std::vector<VisibleConnection> _visibleHiddenConnections;
 			std::vector<VisibleConnection> _hiddenPrevHiddenConnections;
@@ -74,29 +63,22 @@ namespace sc {
 			float _state;
 			float _statePrev;
 			float _statePrevPrev;
-			float _bit;
-			float _bitPrev;
-			float _bitPrevPrev;
 			float _error;
 			float _activation;
 			float _reconstruction; // From recurrent connections
-			float _attention;
-			float _inhibition;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _bit(0.0f), _bitPrev(0.0f), _bitPrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f), _attention(0.0f), _inhibition(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
 		struct VisibleNode {
 			float _input;
-			float _inputPrev;
 			float _reconstruction;
-			float _reconstructionPrev;
 			float _error;
 
 			VisibleNode()
-				: _input(0.0f), _inputPrev(0.0f), _reconstruction(0.0f), _reconstructionPrev(0.0f), _error(0.0f)
+				: _input(0.0f), _reconstruction(0.0f), _error(0.0f)
 			{}
 		};
 
@@ -126,22 +108,6 @@ namespace sc {
 
 		void setVisibleInput(int x, int y, float value) {
 			_visible[x + y * _visibleWidth]._input = value;
-		}
-
-		void setAttention(int index, float value) {
-			_hidden[index]._attention = value;
-		}
-
-		void setAttention(int x, int y, float value) {
-			_hidden[x + y * _hiddenWidth]._attention = value;
-		}
-
-		float getAttention(int index) const {
-			return _hidden[index]._attention;
-		}
-
-		float getAttention(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._attention;
 		}
 
 		float getVisibleRecon(int index) const {
@@ -184,44 +150,12 @@ namespace sc {
 			return _hidden[x + y * _hiddenWidth]._statePrev;
 		}
 
-		float getHiddenBit(int index) const {
-			return _hidden[index]._bit;
-		}
-
-		float getHiddenBit(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._bit;
-		}
-
-		float getHiddenBitPrev(int index) const {
-			return _hidden[index]._bitPrev;
-		}
-
-		float getHiddenBitPrev(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._bitPrev;
-		}
-
 		HiddenNode &getHiddenNode(int index) {
 			return _hidden[index];
 		}
 
 		HiddenNode &getHiddenNode(int x, int y) {
 			return _hidden[x + y * _hiddenWidth];
-		}
-
-		float getHiddenNovelty(int index) const {
-			return _hidden[index]._bit * (1.0f - _hidden[index]._bitPrev);
-		}
-
-		float getHiddenNovelty(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._bit * (1.0f - _hidden[x + y * _hiddenWidth]._bitPrev);
-		}
-
-		float getHiddenNoveltyPrev(int index) const {
-			return _hidden[index]._bitPrev * (1.0f - _hidden[index]._bitPrevPrev);
-		}
-
-		float getHiddenNoveltyPrev(int x, int y) const {
-			return _hidden[x + y * _hiddenWidth]._bitPrev * (1.0f - _hidden[x + y * _hiddenWidth]._bitPrevPrev);
 		}
 
 		int getNumVisible() const {

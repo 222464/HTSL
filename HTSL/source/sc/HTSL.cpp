@@ -178,6 +178,8 @@ void HTSL::update() {
 				
 			node._state = (1.0f - inhibition * sigmoid(rsc._hidden[ni]._bias)) > 0.0f ? 1.0f : 0.0f;
 
+			//_layers[l]._rsc.setPrediction(ni, node._state);
+
 			// Also update hidden usage
 			node._hiddenUsage = (1.0f - _layerDescs[l]._hiddenUsageDecay) * node._hiddenUsage + _layerDescs[l]._hiddenUsageDecay * rsc.getHiddenState(ni);
 		}
@@ -231,8 +233,6 @@ void HTSL::learn(float importance) {
 			PredictionNode &node = _layers[l]._predictionNodes[ni];
 			
 			node._error = _layers[l]._rsc.getHiddenState(ni) - node._statePrev;
-
-			_layers[l]._rsc.setAttention(ni, _layerDescs[l]._attentionAlpha * node._error * importance);
 		}
 	}
 
