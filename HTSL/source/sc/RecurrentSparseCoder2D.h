@@ -65,10 +65,10 @@ namespace sc {
 			float _statePrevPrev;
 			float _error;
 			float _activation;
-			float _reconstruction; // From recurrent connections
+			float _attention;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _error(0.0f), _activation(0.0f), _reconstruction(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _error(0.0f), _activation(0.0f), _attention(0.0f)
 			{}
 		};
 
@@ -148,6 +148,22 @@ namespace sc {
 
 		float getHiddenStatePrev(int x, int y) const {
 			return _hidden[x + y * _hiddenWidth]._statePrev;
+		}
+
+		void setAttention(int index, float attention) {
+			_hidden[index]._attention = attention;
+		}
+
+		void setAttention(int x, int y, float attention) {
+			_hidden[x + y * _hiddenWidth]._attention = attention;
+		}
+
+		float getAttention(int index) const {
+			return _hidden[index]._attention;
+		}
+
+		float getAttention(int x, int y) const {
+			return _hidden[x + y * _hiddenWidth]._attention;
 		}
 
 		HiddenNode &getHiddenNode(int index) {
