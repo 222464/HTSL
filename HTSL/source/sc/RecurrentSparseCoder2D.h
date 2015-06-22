@@ -66,9 +66,10 @@ namespace sc {
 			float _error;
 			float _activation;
 			float _attention;
+			float _reconstruction;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _error(0.0f), _activation(0.0f), _attention(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _statePrevPrev(0.0f), _error(0.0f), _activation(0.0f), _attention(0.0f), _reconstruction(0.0f)
 			{}
 		};
 

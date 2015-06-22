@@ -40,9 +40,9 @@ int main() {
 
 	htsl.createRandom(2, 2, layerDescs, generator);
 
-	int ticksPerSample = 1;
+	int ticksPerSample = 2;
 
-	int predSteps = 6;
+	int predSteps = 1;
 
 	int tickCounter = 0;
 
@@ -96,10 +96,10 @@ int main() {
 
 			prevMousePos = mousePos;
 
-			htsl.setInput(0, mousePos.x * 0.01f);
-			htsl.setInput(1, mousePos.y * 0.01f);
-			htsl.setInput(2, delta.x * 0.1f);
-			htsl.setInput(3, delta.y * 0.1f);
+			htsl.setInput(0, mousePos.x * 0.001f);
+			htsl.setInput(1, mousePos.y * 0.001f);
+			htsl.setInput(2, delta.x * 0.01f);
+			htsl.setInput(3, delta.y * 0.01f);
 
 			htsl.update();
 			htsl.learn();
@@ -123,8 +123,8 @@ int main() {
 		}
 
 		sf::Vector2f predPos;
-		predPos.x = copy.getPrediction(0) * 100.0f;
-		predPos.y = copy.getPrediction(1) * 100.0f;
+		predPos.x = copy.getPrediction(0) * 1000.0f;
+		predPos.y = copy.getPrediction(1) * 1000.0f;
 
 		predictRenderPos += 0.2f * (predPos - predictRenderPos);
 

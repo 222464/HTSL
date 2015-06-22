@@ -35,7 +35,7 @@ int main() {
 
 	sf::Image sampleImage;
 
-	sampleImage.loadFromFile("testImage.png");
+	sampleImage.loadFromFile("testImage_whitened.png");
 
 	sf::Texture sampleTexture;
 
@@ -238,6 +238,8 @@ int main() {
 		sampleSprite.setTexture(sampleTexture);
 
 		sampleSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - sampleImage.getSize().x, 0.0f));
+
+		sampleSprite.setScale(0.125f, 0.125f);
 
 		renderWindow.draw(sampleSprite);
 
