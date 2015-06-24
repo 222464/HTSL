@@ -87,12 +87,12 @@ int main() {
 
 	loadDataset("resources/datasets/pianorolls/piano_rolls1.txt", train);
 
-	std::vector<int> useSequences(32);
+	std::vector<int> useSequences(64);
 
 	for (int s = 0; s < useSequences.size(); s++)
 		useSequences[s] = s + 1;
 
-	const int useLength = 10;
+	const int useLength = 16;
 
 	std::unordered_set<int> usedNotes;
 
@@ -140,7 +140,7 @@ int main() {
 	std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 
 	// Train on sequence
-	for (int iter = 0; iter < 100; iter++) {
+	for (int iter = 0; iter < 200; iter++) {
 		int useSequence = useSequences[dist01(generator) * (useSequences.size() - 1)];
 
 		int sf = dist01(generator) * std::min(static_cast<int>(train._sequences[useSequence]._frames.size() - 1), useLength - 1);

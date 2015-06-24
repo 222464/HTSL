@@ -40,7 +40,7 @@ void RecurrentSparseCoder2D::createRandom(int visibleWidth, int visibleHeight, i
 		int centerX = std::round(hx * hiddenToVisibleWidth);
 		int centerY = std::round(hy * hiddenToVisibleHeight);
 
-		_hidden[hi]._bias = 1.0f;
+		_hidden[hi]._bias = 0.0f;
 
 		// Receptive
 		_hidden[hi]._visibleHiddenConnections.reserve(receptiveSize);

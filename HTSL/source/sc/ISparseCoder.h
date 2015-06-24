@@ -25,75 +25,51 @@ misrepresented as being the original software.
 #include <random>
 
 namespace sc {
-	class SparseCoder {
+	class ISparseCoder {
 	public:
 		static double sigmoid(double x) {
 			return 1.0 / (1.0 + std::exp(-x));
 		}
 
 		struct VisibleConnection {
-			unsigned short _index;
-
 			double _weight;
-
-			double _falloff;
 
 			VisibleConnection()
 			{}
 		};
 
-		struct HiddenConnection {
-			unsigned short _index;
-
-			double _weight;
-
-			double _falloff;
-
-			HiddenConnection()
-			{}
-		};
-
 		struct HiddenNode {
 			std::vector<VisibleConnection> _visibleHiddenConnections;
-			std::vector<HiddenConnection> _hiddenHiddenConnections;
-
-			double _bias;
-
 			double _activation;
-			double _state;
 
 			HiddenNode()
-				: _state(0.0), _activation(0.0), _bias(0.0)
+				: _activation(0.0)
 			{}
 		};
 
 		struct VisibleNode {
 			double _input;
 			double _reconstruction;
-			double _error;
 
 			VisibleNode()
-				: _input(0.0), _reconstruction(0.0), _error(0.0)
+				: _input(0.0), _reconstruction(0.0)
 			{}
 		};
 
 	private:
 		int _visibleSize;
 		int _hiddenSize;
-		int _receptiveRadius;
-		int _inhibitionRadius;
 
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleSize, int hiddenSize, int receptiveRadius, int inhibitionRadius, double weightScale, std::mt19937 &generator);
+		void createRandom(int visibleSize, int hiddenSize, double weightScale, std::mt19937 &generator);
 
-		// delta = D * (x - Dh) - lambda * h / (sqrt(h^2 + e))
-		void activate(double excitation = 1.0);
+		void activate(int iter, double stepSize, double lambda, double epsilon);
 		void reconstruct();
 		void reconstruct(const std::vector<double> &hiddenStates, std::vector<double> &recon);
-		void learn(double alpha, double beta, double gamma, double sparsity);
+		void learn(double alpha);
 
 		void setVisibleInput(int index, double value) {
 			_visible[index]._input = value;
@@ -101,14 +77,6 @@ namespace sc {
 
 		double getVisibleRecon(int index) const {
 			return _visible[index]._reconstruction;
-		}
-
-		double getVisibleState(int index) const {
-			return _visible[index]._input;
-		}
-
-		double getHiddenState(int index) const {
-			return _hidden[index]._state;
 		}
 
 		double getHiddenActivation(int index) const {
@@ -133,14 +101,6 @@ namespace sc {
 
 		int getHiddenSize() const {
 			return _hiddenSize;
-		}
-
-		int getReceptiveRadius() const {
-			return _receptiveRadius;
-		}
-
-		int getInhbitionRadius() const {
-			return _inhibitionRadius;
 		}
 
 		double getVHWeight(int hi, int ci) const {
