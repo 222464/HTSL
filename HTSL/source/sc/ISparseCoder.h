@@ -27,12 +27,12 @@ misrepresented as being the original software.
 namespace sc {
 	class ISparseCoder {
 	public:
-		static double sigmoid(double x) {
+		static float sigmoid(float x) {
 			return 1.0 / (1.0 + std::exp(-x));
 		}
 
 		struct VisibleConnection {
-			double _weight;
+			float _weight;
 
 			VisibleConnection()
 			{}
@@ -40,7 +40,7 @@ namespace sc {
 
 		struct HiddenNode {
 			std::vector<VisibleConnection> _visibleHiddenConnections;
-			double _activation;
+			float _activation;
 
 			HiddenNode()
 				: _activation(0.0)
@@ -48,8 +48,8 @@ namespace sc {
 		};
 
 		struct VisibleNode {
-			double _input;
-			double _reconstruction;
+			float _input;
+			float _reconstruction;
 
 			VisibleNode()
 				: _input(0.0), _reconstruction(0.0)
@@ -64,22 +64,22 @@ namespace sc {
 		std::vector<HiddenNode> _hidden;
 
 	public:
-		void createRandom(int visibleSize, int hiddenSize, double weightScale, std::mt19937 &generator);
+		void createRandom(int visibleSize, int hiddenSize, float weightScale, std::mt19937 &generator);
 
-		void activate(int iter, double stepSize, double lambda, double epsilon);
+		void activate(int iter, float stepSize, float lambda, float initActivationStdDev, std::mt19937 &generator);
 		void reconstruct();
-		void reconstruct(const std::vector<double> &hiddenStates, std::vector<double> &recon);
-		void learn(double alpha);
+		void reconstruct(const std::vector<float> &hiddenStates, std::vector<float> &recon);
+		void learn(float alpha);
 
-		void setVisibleInput(int index, double value) {
+		void setVisibleInput(int index, float value) {
 			_visible[index]._input = value;
 		}
 
-		double getVisibleRecon(int index) const {
+		float getVisibleRecon(int index) const {
 			return _visible[index]._reconstruction;
 		}
 
-		double getHiddenActivation(int index) const {
+		float getHiddenActivation(int index) const {
 			return _hidden[index]._activation;
 		}
 
@@ -103,7 +103,7 @@ namespace sc {
 			return _hiddenSize;
 		}
 
-		double getVHWeight(int hi, int ci) const {
+		float getVHWeight(int hi, int ci) const {
 			return _hidden[hi]._visibleHiddenConnections[ci]._weight;
 		}
 

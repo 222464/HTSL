@@ -17,14 +17,17 @@
 #include <sc/HTSL.h>
 #include <sc/SparseCoder.h>
 #include <sc/ISparseCoder.h>
+#include <sc/BISparseCoder.h>
 #include <deep/AutoEncoder.h>
 
 #include <complex>
 #include <valarray>
 
-const double pi = 3.14159265359;
+#define RECONSTRUCT_DIRECT 0
 
-typedef std::complex<double> Complex;
+const float pi = 3.14159265359;
+
+typedef std::complex<float> Complex;
 typedef std::valarray<Complex> CArray;
 
 // Cooley–Tukey FFT (in-place)
@@ -44,7 +47,7 @@ void fft(CArray& x) {
 
 	// Combine
 	for (size_t k = 0; k < N / 2; ++k) {
-		Complex t = std::polar(1.0, -2 * pi * k / N) * odd[k];
+		Complex t = std::polar(1.0f, -2.0f * pi * k / N) * odd[k];
 		x[k] = even[k] + t;
 		x[k + N / 2] = even[k] - t;
 	}
@@ -66,21 +69,37 @@ void ifft(CArray& x) {
 }
 
 const int aeSamplesSize = 1024;
-const int aeFeatures = 100;
-const double sampleScalar = 1.0 / std::pow(2.0, 15.0);
-const double sampleScalarInv = 1.0 / sampleScalar;
+const int aeFeatures = 49;
+const float sampleScalar = 1.0f / std::pow(2.0f, 15.0f);
+const float sampleScalarInv = 1.0f / sampleScalar;
 const int reconStride = 512;
-const double sampleCurvePower = 1.0;
-const double sampleCurvePowerInv = 1.0 / sampleCurvePower;
+const float sampleCurvePower = 1.0f;
+const float sampleCurvePowerInv = 1.0f / sampleCurvePower;
 const int trainStride = 512;
 
-double compress(double x) {
+float compress(float x) {
 	return x * sampleScalar;// (x > 0 ? 1 : -1) * std::pow(std::abs(x) * sampleScalar, sampleCurvePower);
 }
 
-double decompress(double x) {
+float decompress(float x) {
 	return x * sampleScalarInv;// (x > 0 ? 1 : -1) * std::pow(std::abs(x), sampleCurvePowerInv) * sampleScalarInv;
 }
+
+struct FeaturesPointer {
+	int _bufferStart;
+
+	std::vector<float> _features;
+
+	float similarity(const std::vector<float> &otherFeatures) {
+		float sum = 0.0f;
+
+		for (int i = 0; i < _features.size(); i++) {
+			sum += _features[i] * otherFeatures[i];
+		}
+
+		return sum;
+	}
+};
 
 int main() {
 	std::mt19937 generator(time(nullptr));
@@ -91,7 +110,7 @@ int main() {
 
 	sc::ISparseCoder ae;
 
-	ae.createRandom(aeSamplesSize, aeFeatures, 0.5, generator);
+	ae.createRandom(aeSamplesSize, aeFeatures, 1.0f, generator);
 
 	std::cout << "Training low-level feature extractor..." << std::endl;
 
@@ -99,10 +118,11 @@ int main() {
 
 	int featureIter = 10000;
 
-	int iIter = 32;
-	double iStepSize = 0.1;
-	double iLambda = 0.5;
-	double iEpsilon = 0.001;
+	int iIter = 24;
+	float iStepSize = 0.1f;
+	float iLambda = 0.5f;
+	float iEpsilon = 0.001f;
+	float iStdDev = 0.01f;
 
 	for (int t = 0; t < featureIter; t++) {
 		int i = soundDist(generator);
@@ -110,35 +130,50 @@ int main() {
 		for (int s = 0; s < aeSamplesSize; s++)
 			ae.setVisibleInput(s, compress(buffer.getSamples()[i + s]));
 
-		ae.activate(iIter, iStepSize, iLambda, iEpsilon);
+		ae.activate(iIter, iStepSize, iLambda, iStdDev, generator);
 
 		ae.reconstruct();
 
-		ae.learn(0.01);
+		ae.learn(0.002f);
 
 		if (t % 1000 == 0) {
-			std::cout << static_cast<int>(static_cast<float>(t) / featureIter * 100.0f) << "%" << std::endl;
+			std::cout << (static_cast<float>(t) / featureIter * 100.0f) << "%" << std::endl;
 		}
 	}
 
 	std::cout << "Learned features." << std::endl;
 	std::cout << "Testing sound reconstruction..." << std::endl;
 
-	std::vector<double> reconSamplesf(buffer.getSampleCount(), 0.0);
-	std::vector<double> convCounts(buffer.getSampleCount(), 0.0);
+	std::vector<float> reconSamplesf(buffer.getSampleCount(), 0.0f);
+	std::vector<float> convCounts(buffer.getSampleCount(), 0.0f);
+	std::vector<FeaturesPointer> featuresPointers;
+	
+	featuresPointers.reserve((buffer.getSampleCount() - aeSamplesSize) / reconStride + 1);
 
-	double sampleRangeInv = 1.0 / (0.5 * aeSamplesSize);
+	float sampleRangeInv = 1.0f / (0.5f * aeSamplesSize);
 
 	for (int i = 0; i < buffer.getSampleCount() - aeSamplesSize; i += reconStride) {
 		for (int s = 0; s < aeSamplesSize; s++)
 			ae.setVisibleInput(s, compress(buffer.getSamples()[i + s]));
 
-		ae.activate(iIter, iStepSize, iLambda, iEpsilon);
+		ae.activate(iIter, iStepSize, iLambda, iStdDev, generator);
 
 		ae.reconstruct();
 
+		// Create features pointer
+		FeaturesPointer fp;
+
+		fp._features.resize(ae.getNumHidden());
+
+		for (int j = 0; j < ae.getNumHidden(); j++)
+			fp._features[j] = ae.getHiddenActivation(j);
+
+		fp._bufferStart = i;
+
+		featuresPointers.push_back(fp);
+
 		for (int s = 0; s < aeSamplesSize; s++) {
-			double intensity = 1.0;// std::max(0.0, 1.0 - std::abs(0.5 * aeSamplesSize - s) * sampleRangeInv);
+			float intensity = 1.0f;// std::max(0.0, 1.0 - std::abs(0.5 * aeSamplesSize - s) * sampleRangeInv);
 			reconSamplesf[i + s] += ae.getVisibleRecon(s) * intensity;
 			convCounts[i + s] += intensity;
 		}
@@ -146,19 +181,19 @@ int main() {
 
 	for (int i = 0; i < reconSamplesf.size(); i++)
 		if (convCounts[i] != 0)
-			reconSamplesf[i] /= static_cast<double>(convCounts[i]);
+			reconSamplesf[i] /= static_cast<float>(convCounts[i]);
 
 	std::vector<sf::Int16> reconSamples(buffer.getSampleCount());
 
 	// Normalize
-	double mean = 0.0;
+	float mean = 0.0f;
 
 	for (int i = 0; i < reconSamplesf.size(); i++)
 		mean += reconSamplesf[i];
 
 	mean /= reconSamplesf.size();
 
-	double mag2 = 0.0;
+	float mag2 = 0.0f;
 
 	for (int i = 0; i < reconSamplesf.size(); i++) {
 		reconSamplesf[i] -= mean;
@@ -166,7 +201,7 @@ int main() {
 		mag2 += reconSamplesf[i] * reconSamplesf[i];
 	}
 
-	double magInv = 100.0 / std::sqrt(mag2);
+	float magInv = 100.0f / std::sqrt(mag2);
 
 	for (int i = 0; i < reconSamplesf.size(); i++)
 		reconSamplesf[i] *= magInv;
@@ -196,25 +231,25 @@ int main() {
 	layerDescs[2]._width = 8;
 	layerDescs[2]._height = 8;
 
-	ht.createRandom(10, 10, layerDescs, generator);
+	ht.createRandom(7, 7, layerDescs, generator);
 
 	int featuresCount = static_cast<int>(std::floor(buffer.getSampleCount() / static_cast<float>(trainStride)));
 
-	for (int t = 0; t < 5; t++) {
+	for (int t = 0; t < 20; t++) {
 		for (int s = 0; s < featuresCount; s++) {
 			// Extract features
 			int start = s * trainStride;
 
-			for (int i = 0; i < trainStride; i++) {
+			for (int i = 0; i < aeSamplesSize; i++) {
 				int si = start + i;
 
 				if (si < buffer.getSampleCount())
 					ae.setVisibleInput(i, compress(buffer.getSamples()[si]));
 				else
-					ae.setVisibleInput(i, 0.0);
+					ae.setVisibleInput(i, 0.0f);
 			}
 
-			ae.activate(iIter, iStepSize, iLambda, iEpsilon);
+			ae.activate(iIter, iStepSize, iLambda, iStdDev, generator);
 
 			// Run on extracted features
 			for (int f = 0; f < aeFeatures; f++)
@@ -233,10 +268,10 @@ int main() {
 	std::cout << "Generating extra..." << std::endl;
 
 	// Extend song
-	int extraFeatures = 2000;
+	int extraFeatures = 4000;
 
-	std::vector<double> extraSamplesf(extraFeatures * trainStride, 0.0);
-	std::vector<sf::Uint16> extraSamplesSums(extraFeatures * trainStride, 0);
+	std::vector<float> extraSamplesf((extraFeatures + 1) * trainStride, 0.0f);
+	std::vector<float> extraSamplesSums((extraFeatures + 1) * trainStride, 0.0f);
 
 	for (int s = 0; s < extraFeatures; s++) {
 		if (s < featuresCount) {
@@ -245,16 +280,16 @@ int main() {
 
 			int start = s * trainStride;
 
-			for (int i = 0; i < trainStride; i++) {
+			for (int i = 0; i < aeSamplesSize; i++) {
 				int si = start + i;
 
 				if (si < buffer.getSampleCount())
 					ae.setVisibleInput(i, compress(buffer.getSamples()[start + i]));
 				else
-					ae.setVisibleInput(i, 0.0);
+					ae.setVisibleInput(i, 0.0f);
 			}
 
-			ae.activate(iIter, iStepSize, iLambda, iEpsilon);
+			ae.activate(iIter, iStepSize, iLambda, iStdDev, generator);
 
 			for (int f = 0; f < aeFeatures; f++)
 				ht.setInput(f, ae.getHiddenActivation(f));
@@ -269,21 +304,45 @@ int main() {
 
 		ht.stepEnd();
 
-		std::vector<double> pred(aeFeatures);
+		std::vector<float> pred(aeFeatures);
 
 		for (int f = 0; f < aeFeatures; f++)
 			pred[f] = ht.getPrediction(f);
 
-		std::vector<double> reconstruction(trainStride);
+#if RECONSTRUCT_DIRECT
+		std::vector<float> reconstruction(trainStride);
 
 		ae.reconstruct(pred, reconstruction);
 
 		int start = s * trainStride;
 
-		for (int i = 0; i < trainStride; i++) {
+		for (int i = 0; i < aeSamplesSize; i++) {
 			extraSamplesf[start + i] += reconstruction[i];
 			extraSamplesSums[start + i]++;
 		}
+#else
+		// Match features to closest in feature pointers
+		float maxSim = -99999.0f;
+		int maxFeatureIndex = 0;
+
+		for (int f = 0; f < featuresPointers.size(); f++) {
+			float sim = featuresPointers[f].similarity(pred);
+
+			if (sim > maxSim) {
+				maxSim = sim;
+
+				maxFeatureIndex = f;
+			}
+		}
+
+		int start = s * trainStride;
+
+		for (int i = 0; i < aeSamplesSize; i++) {
+			float intensity = maxSim * std::max(0.0f, 1.0f - std::abs(0.5f * aeSamplesSize - i) * sampleRangeInv);
+			extraSamplesf[start + i] += intensity * compress(buffer.getSamples()[featuresPointers[maxFeatureIndex]._bufferStart + i]);
+			extraSamplesSums[start + i] += intensity;
+		}
+#endif
 	}
 
 	std::vector<sf::Int16> extraSamples(extraSamplesf.size());
