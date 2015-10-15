@@ -16,26 +16,27 @@ int main() {
 
 	const int sampleWidth = 32;
 	const int sampleHeight = 32;
-	const int codeWidth = 32;
-	const int codeHeight = 32;
-	const float learnAlpha = 0.2f;
+	const int codeWidth = 16;
+	const int codeHeight = 16;
+	const int istaIter = 30;
+	const float istaStepSize = 0.2f;
 	const float sparsityDecay = 0.1f;
 
 	float sparsity = 1.0f;
 
-	const int stepsPerFrame = 4;
+	const int stepsPerFrame = 1;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
 	sc::RecurrentSparseCoder2D sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 12, 10, 4, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, 5, 0.5f, 0.0f, 10.02f, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
 	sf::Image sampleImage;
 
-	sampleImage.loadFromFile("testImage_whitened.png");
+	sampleImage.loadFromFile("testImage.png");
 
 	sf::Texture sampleTexture;
 
@@ -89,21 +90,22 @@ int main() {
 			int sampleX = widthDist(generator);
 			int sampleY = heightDist(generator);
 
-			int inputIndex = 0;
+			std::vector<float> inputf(sampleWidth * sampleHeight);
 
 			for (int x = 0; x < sampleWidth; x++)
 				for (int y = 0; y < sampleHeight; y++) {
 					int tx = sampleX + x;
 					int ty = sampleY + y;
 
-					sparseCoder.setVisibleInput(x, y, sampleImage.getPixel(tx, ty).r / 255.0f);
+					inputf[x + y * sampleWidth] = sampleImage.getPixel(tx, ty).r / 255.0f;
 				}
 
-			sparseCoder.activate();
+			for (int i = 0; i < inputf.size(); i++)
+				sparseCoder.setVisibleInput(i, inputf[i]);
 
-			sparseCoder.reconstruct();
+			sparseCoder.activate(istaIter, istaStepSize);
 
-			sparseCoder.learn(0.5f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.05f, 0.0001f);
+			sparseCoder.learn(0.01f, 0.5f, 0.1f, 0.1f);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
@@ -111,30 +113,37 @@ int main() {
 			std::vector<float> recon(sampleImage.getSize().x * sampleImage.getSize().y, 0.0f);
 			std::vector<float> sums(sampleImage.getSize().x * sampleImage.getSize().y, 0.0f);
 
-			for (int wx = 0; wx < sampleImage.getSize().x - sampleWidth; wx++)
-				for (int wy = 0; wy < sampleImage.getSize().y - sampleHeight; wy++) {
-					int inputIndex = 0;
+			for (int wx = 0; wx < sampleImage.getSize().x - sampleWidth; wx += 2)
+				for (int wy = 0; wy < sampleImage.getSize().y - sampleHeight; wy += 2) {
+					std::vector<float> inputf(sampleWidth * sampleHeight);
 
 					for (int x = 0; x < sampleWidth; x++)
 						for (int y = 0; y < sampleHeight; y++) {
 							int tx = wx + x;
 							int ty = wy + y;
 
-							sparseCoder.setVisibleInput(x, y, sampleImage.getPixel(tx, ty).r / 255.0f);
+							inputf[x + y * sampleWidth] = sampleImage.getPixel(tx, ty).r / 255.0f;
 						}
 
-					sparseCoder.activate();
+					for (int i = 0; i < inputf.size(); i++)
+						sparseCoder.setVisibleInput(i, inputf[i]);
 
-					sparseCoder.reconstruct();
+					sparseCoder.activate(istaIter, istaStepSize);
 
-					inputIndex = 0;
+					std::vector<float> rv;
+
+					sparseCoder.reconstruct(rv);
+
+					sparseCoder.denorm(rv);
+
+					sparseCoder.stepEnd();
 
 					for (int x = 0; x < sampleWidth; x++)
 						for (int y = 0; y < sampleHeight; y++) {
 							int tx = wx + x;
 							int ty = wy + y;
 
-							recon[tx + ty * sampleImage.getSize().x] += sparseCoder.getVisibleRecon(x, y);
+							recon[tx + ty * sampleImage.getSize().x] += rv[x + y * sampleWidth];
 							sums[tx + ty * sampleImage.getSize().x] += 1.0f;
 						}
 				}
@@ -220,7 +229,7 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				if (sparseCoder.getHiddenState(sx + sy * codeWidth) > 0.0f) {
+				if (sparseCoder.getHiddenSpikes(sx + sy * codeWidth) > 0.0f) {
 					sf::RectangleShape rs;
 
 					rs.setPosition(sx * dim * scale, sy * dim * scale);
@@ -234,6 +243,8 @@ int main() {
 				}
 			}
 
+		sparseCoder.stepEnd();
+
 		sf::Sprite sampleSprite;
 		sampleSprite.setTexture(sampleTexture);
 
@@ -246,7 +257,9 @@ int main() {
 		sf::Sprite reconstructionSprite;
 		reconstructionSprite.setTexture(reconstructionTexture);
 
-		reconstructionSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - reconstructionImage.getSize().x, renderWindow.getSize().y - reconstructionImage.getSize().y));
+		reconstructionSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - reconstructionImage.getSize().x * 4.0f, renderWindow.getSize().y - reconstructionImage.getSize().y * 4.0f));
+
+		reconstructionSprite.setScale(4.0f, 4.0f);
 
 		renderWindow.draw(reconstructionSprite);
 

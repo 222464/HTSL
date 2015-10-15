@@ -16,6 +16,7 @@
 #include <sc/HTSL.h>
 #include <hyp/BayesianOptimizer.h>
 
+/*
 void getVars(sc::HTSL &htsl, std::vector<float> &vars) {
 	if (vars.size() != 13)
 		vars.resize(13);
@@ -56,7 +57,7 @@ void setVars(sc::HTSL &htsl, const std::vector<float> &vars) {
 		htsl.getLayerDescs()[0]._lowUsagePreference = vars[index++];
 	}
 }
-
+*/
 int main() {
 	std::mt19937 generator(time(nullptr));
 

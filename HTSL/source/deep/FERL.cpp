@@ -1,25 +1,4 @@
-/*
-AI Lib
-Copyright (C) 2014 Eric Laukien
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-claim that you wrote the original software. If you use this software
-in a product, an acknowledgment in the product documentation would be
-appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
-#include <deep/FERL.h>
+#include "FERL.h"
 
 #include <algorithm>
 
@@ -28,16 +7,18 @@ misrepresented as being the original software.
 using namespace deep;
 
 FERL::FERL()
-: _zInv(1.0f), _prevMax(0.0f), _prevValue(0.0f)
+: _zInv(1.0f), _prevValue(0.0f)
 {}
 
 void FERL::createRandom(int numState, int numAction, int numHidden, float weightStdDev, std::mt19937 &generator) {
 	_numState = numState;
 	_numAction = numAction;
 
-	_visible.resize(numState + numAction + numHidden);
+	_visible.resize(numState + numAction);
 
 	_hidden.resize(numHidden);
+
+	_actions.resize(numAction);
 
 	std::normal_distribution<float> weightDist(0.0f, weightStdDev);
 
@@ -53,10 +34,22 @@ void FERL::createRandom(int numState, int numAction, int numHidden, float weight
 			_hidden[k]._connections[vi]._weight = weightDist(generator);
 	}
 
+	for (int a = 0; a < _actions.size(); a++) {
+		_actions[a]._bias._weight = weightDist(generator);
+
+		_actions[a]._connections.resize(_hidden.size());
+
+		for (int vi = 0; vi < _hidden.size(); vi++)
+			_actions[a]._connections[vi]._weight = weightDist(generator);
+	}
+
 	_zInv = 1.0f / std::sqrt(static_cast<float>(numState + numHidden));
 
 	_prevVisible.clear();
 	_prevVisible.assign(_visible.size(), 0.0f);
+
+	_prevHidden.clear();
+	_prevHidden.assign(_hidden.size(), 0.0f);
 }
 
 void FERL::createFromParents(const FERL &parent1, const FERL &parent2, float averageChance, std::mt19937 &generator) {
@@ -81,6 +74,15 @@ void FERL::createFromParents(const FERL &parent1, const FERL &parent2, float ave
 			_hidden[k]._connections[vi]._weight = uniformDist(generator) < averageChance ? (parent1._hidden[k]._connections[vi]._weight + parent2._hidden[k]._connections[vi]._weight) * 0.5f : (uniformDist(generator) < 0.5f ? parent1._hidden[k]._connections[vi]._weight : parent2._hidden[k]._connections[vi]._weight);
 	}
 
+	for (int a = 0; a < _actions.size(); a++) {
+		_actions[a]._bias._weight = uniformDist(generator) < averageChance ? (parent1._actions[a]._bias._weight + parent2._actions[a]._bias._weight) * 0.5f : (uniformDist(generator) < 0.5f ? parent1._actions[a]._bias._weight : parent2._actions[a]._bias._weight);
+
+		_actions[a]._connections.resize(_hidden.size());
+
+		for (int vi = 0; vi < _hidden.size(); vi++)
+			_actions[a]._connections[vi]._weight = uniformDist(generator) < averageChance ? (parent1._actions[a]._connections[vi]._weight + parent2._actions[a]._connections[vi]._weight) * 0.5f : (uniformDist(generator) < 0.5f ? parent1._actions[a]._connections[vi]._weight : parent2._actions[a]._connections[vi]._weight);
+	}
+
 	_zInv = 1.0f / std::sqrt(static_cast<float>(_numState + _hidden.size()));
 
 	_prevVisible.clear();
@@ -100,6 +102,15 @@ void FERL::mutate(float perturbationStdDev, std::mt19937 &generator) {
 
 		for (int vi = 0; vi < _visible.size(); vi++)
 			_hidden[k]._connections[vi]._weight += perturbationDist(generator);
+	}
+
+	for (int a = 0; a < _actions.size(); a++) {
+		_actions[a]._bias._weight += perturbationDist(generator);
+
+		_actions[a]._connections.resize(_hidden.size());
+
+		for (int vi = 0; vi < _hidden.size(); vi++)
+			_actions[a]._connections[vi]._weight += perturbationDist(generator);
 	}
 }
 
@@ -122,19 +133,14 @@ float FERL::freeEnergy() const {
 }
 
 void FERL::step(const std::vector<float> &state, std::vector<float> &action,
-	float reward, float qAlpha, float gamma, float lambdaGamma, float tauInv,
-	int actionSearchIterations, int actionSearchSamples, float actionSearchAlpha,
+	float reward, float qAlpha, float gamma, float lambdaGamma,
+	float actionAlpha, int actionSearchIterations, int actionSearchSamples, float actionSearchAlpha,
 	float breakChance, float perturbationStdDev,
-	int maxNumReplaySamples, int replayIterations, float gradientAlpha, float gradientMomentum,
+	int maxNumReplaySamples, int replayIterations, float gradientAlpha,
 	std::mt19937 &generator)
 {
 	for (int i = 0; i < _numState; i++)
 		_visible[i]._state = state[i];
-
-	std::vector<float> prevHidden(_hidden.size());
-
-	for (int i = 0; i < _hidden.size(); i++)
-		_visible[_numState + _numAction + i]._state = prevHidden[i] = _hidden[i]._state;
 
 	std::vector<float> maxAction(_numAction);
 
@@ -143,11 +149,22 @@ void FERL::step(const std::vector<float> &state, std::vector<float> &action,
 	std::uniform_real_distribution<float> uniformDist(0.0f, 1.0f);
 
 	for (int s = 0; s < actionSearchSamples; s++) {
-		// Start with random inputs
-		for (int j = 0; j < _numAction; j++)
-			_visible[j + _numState]._state = uniformDist(generator) * 2.0f - 1.0f;
+		// Start with previous best inputs on first iteration
+		if (s == 0) {
+			// Find last best action
+			for (int a = 0; a < _actions.size(); a++) {
+				float sum = _actions[a]._bias._weight;
 
-		activate();
+				for (int k = 0; k < _prevHidden.size(); k++)
+					sum += _actions[a]._connections[k]._weight * _prevHidden[k];
+				
+				_visible[a + _numState]._state = std::min(1.0f, std::max(-1.0f, sum));
+			}
+		}
+		else { // Start with random inputs on other iterations		
+			for (int j = 0; j < _numAction; j++)
+				_visible[j + _numState]._state = uniformDist(generator) * 2.0f - 1.0f;
+		}
 
 		// Find best action and associated Q value
 		for (int p = 0; p < actionSearchIterations; p++) {
@@ -197,20 +214,19 @@ void FERL::step(const std::vector<float> &state, std::vector<float> &action,
 	float predictedQ = value();
 
 	// Update Q
-	float newAdv = _prevMax + (reward + gamma * predictedQ - _prevMax) * tauInv;
-
-	float error = newAdv - _prevValue;
+	float tdError = reward + gamma * predictedQ - _prevValue;
 
 	ReplaySample sample;
 
 	sample._visible = _prevVisible;
-	sample._q = _prevValue + qAlpha * error;
+	sample._q = _prevValue + qAlpha * tdError;
+	sample._originalQ = sample._q;
 
 	// Update previous samples
 	float g = gamma;
 
 	for (std::list<ReplaySample>::iterator it = _replaySamples.begin(); it != _replaySamples.end(); it++) {
-		it->_q += qAlpha * g * error;
+		it->_q += qAlpha * g * tdError;
 
 		g *= gamma;
 	}
@@ -246,10 +262,38 @@ void FERL::step(const std::vector<float> &state, std::vector<float> &action,
 
 		float currentQ = value();
 
-		updateOnError(gradientAlpha * (pSample->_q - currentQ), gradientMomentum);
+		updateOnError(gradientAlpha * (pSample->_q - currentQ));
+
+		// If there is a next sample, we can update the action pointer
+		if (replayIndex > 0) {
+			int nextIndex = replayIndex - 1;
+
+			// If q is same or improved, learn action to point
+			if (pSample->_q > pSample->_originalQ) {
+
+				// Activate
+				for (int a = 0; a < _actions.size(); a++) {
+					float sum = _actions[a]._bias._weight;
+
+					for (int k = 0; k < _hidden.size(); k++)
+						sum += _actions[a]._connections[k]._weight * _hidden[k]._state;
+
+					_actions[a]._state = sum;
+				}
+
+				// Update
+				for (int a = 0; a < _actions.size(); a++) {
+					float alphaError = actionAlpha * (pReplaySamples[nextIndex]->_visible[a + _numState] - _actions[a]._state);
+
+					_actions[a]._bias._weight += alphaError;
+
+					for (int k = 0; k < _hidden.size(); k++)
+						_actions[a]._connections[k]._weight += alphaError * _hidden[k]._state;
+				}
+			}
+		}
 	}
 
-	_prevMax = nextQ;
 	_prevValue = predictedQ;
 
 	for (int i = 0; i < _numState; i++)
@@ -258,15 +302,13 @@ void FERL::step(const std::vector<float> &state, std::vector<float> &action,
 	for (int j = 0; j < _numAction; j++)
 		_visible[_numState + j]._state = action[j];
 
-	for (int i = 0; i < _hidden.size(); i++)
-		_visible[_numState + _numAction + i]._state = prevHidden[i];
-
 	activate();
 
 	for (int i = 0; i < _visible.size(); i++)
 		_prevVisible[i] = _visible[i]._state;
 
-	std::cout << value() << " " << newAdv << " " << action[0] << std::endl;
+	for (int i = 0; i < _hidden.size(); i++)
+		_prevHidden[i] = _hidden[i]._state;
 }
 
 void FERL::activate() {
@@ -280,43 +322,35 @@ void FERL::activate() {
 	}
 }
 
-void FERL::updateOnError(float error, float momentum) {
+void FERL::updateOnError(float error) {
 	// Update weights
 	for (int k = 0; k < _hidden.size(); k++) {
-		float dBias = error * _hidden[k]._state + momentum * _hidden[k]._bias._prevDWeight;
-		_hidden[k]._bias._weight += dBias;
-		_hidden[k]._bias._prevDWeight = dBias;
+		_hidden[k]._bias._weight += error * _hidden[k]._state;
 
-		for (int vi = 0; vi < _visible.size(); vi++) {
-			float dWeight = error * _hidden[k]._state * _visible[vi]._state + momentum * _hidden[k]._connections[vi]._prevDWeight;
-			_hidden[k]._connections[vi]._weight += dWeight;
-			_hidden[k]._connections[vi]._prevDWeight = dWeight;
-		}
+		for (int vi = 0; vi < _visible.size(); vi++)
+			_hidden[k]._connections[vi]._weight += error * _hidden[k]._state * _visible[vi]._state;
 	}
 
-	for (int vi = 0; vi < _visible.size(); vi++) {
-		float dBias = error * _visible[vi]._state + momentum * _visible[vi]._bias._prevDWeight;
-		_visible[vi]._bias._weight += dBias;
-		_visible[vi]._bias._prevDWeight = dBias;
-	}
+	for (int vi = 0; vi < _visible.size(); vi++)
+		_visible[vi]._bias._weight += error * _visible[vi]._state;
 }
 
 void FERL::saveToFile(std::ostream &os, bool saveReplayInformation) {
-	os << _hidden.size() << " " << _visible.size() << " " << _numState << " " << _numAction << " " << _zInv << " " << _prevMax << " " << _prevValue << std::endl;
+	os << _hidden.size() << " " << _visible.size() << " " << _numState << " " << _numAction << " " << _zInv << " " << _prevValue << std::endl;
 
 	// Save hidden nodes
 	for (int k = 0; k < _hidden.size(); k++) {
-		os << _hidden[k]._state << " " << _hidden[k]._bias._weight << " " << _hidden[k]._bias._prevDWeight;
+		os << _hidden[k]._state << " " << _hidden[k]._bias._weight;
 
 		for (int vi = 0; vi < _visible.size(); vi++)
-			os << " " << _hidden[k]._connections[vi]._weight << " " << _hidden[k]._connections[vi]._prevDWeight;
+			os << " " << _hidden[k]._connections[vi]._weight;
 
 		os << std::endl;
 	}
 
 	// Save visible nodes
 	for (int vi = 0; vi < _visible.size(); vi++)
-		os << _visible[vi]._state << " " << _visible[vi]._bias._weight << " " << _visible[vi]._bias._prevDWeight << std::endl;
+		os << _visible[vi]._state << " " << _visible[vi]._bias._weight << std::endl;
 
 	if (saveReplayInformation) {
 		os << "t" << _replaySamples.size() << std::endl;
@@ -335,23 +369,23 @@ void FERL::saveToFile(std::ostream &os, bool saveReplayInformation) {
 void FERL::loadFromFile(std::istream &is, bool loadReplayInformation) {
 	int numHidden, numVisible;
 
-	is >> numHidden >> numVisible >> _numState >> _numAction >> _zInv >> _prevMax >> _prevValue;
+	is >> numHidden >> numVisible >> _numState >> _numAction >> _zInv >> _prevValue;
 
 	_hidden.resize(numHidden);
 
 	for (int k = 0; k < numHidden; k++) {
 		_hidden[k]._connections.resize(numVisible);
 
-		is >> _hidden[k]._state >> _hidden[k]._bias._weight >> _hidden[k]._bias._prevDWeight;
+		is >> _hidden[k]._state >> _hidden[k]._bias._weight;
 
 		for (int vi = 0; vi < numVisible; vi++)
-			is >> _hidden[k]._connections[vi]._weight >> _hidden[k]._connections[vi]._prevDWeight;
+			is >> _hidden[k]._connections[vi]._weight;
 	}
 
 	_visible.resize(numVisible);
 
 	for (int vi = 0; vi < numVisible; vi++)
-		is >> _visible[vi]._state >> _visible[vi]._bias._weight >> _visible[vi]._bias._prevDWeight;
+		is >> _visible[vi]._state >> _visible[vi]._bias._weight;
 
 	if (loadReplayInformation) {
 		std::string hasReplayInformationString;

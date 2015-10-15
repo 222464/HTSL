@@ -186,7 +186,7 @@ int main() {
 
 		for (int x = 0; x < layerDescs[0]._width; x++) {
 			for (int y = 0; y < layerDescs[0]._height; y++) {
-				std::cout << (htsl.getLayers()[0]._rsc.getHiddenState(x, y) > 0.0f ? "1" : "0");
+				std::cout << (htsl.getLayers()[0]._predictionNodes[x + y * layerDescs[0]._width]._spikesPrev > 0.0f ? "1" : "0");
 			}
 
 			std::cout << std::endl;

@@ -1,24 +1,3 @@
-/*
-AI Lib
-Copyright (C) 2014 Eric Laukien
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-claim that you wrote the original software. If you use this software
-in a product, an acknowledgment in the product documentation would be
-appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
 #pragma once
 
 #include <vector>
@@ -36,18 +15,13 @@ namespace deep {
 		struct ReplaySample {
 			std::vector<float> _visible;
 
+			float _originalQ;
 			float _q;
 		};
 
 	private:
 		struct Connection {
 			float _weight;
-
-			float _prevDWeight;
-
-			Connection()
-				: _prevDWeight(0.0f)
-			{}
 		};
 
 		struct Hidden {
@@ -71,15 +45,17 @@ namespace deep {
 
 		std::vector<Hidden> _hidden;
 		std::vector<Visible> _visible;
+		std::vector<Hidden> _actions;
+
 		int _numState;
 		int _numAction;
 
 		float _zInv;
 
-		float _prevMax;
 		float _prevValue;
 
 		std::vector<float> _prevVisible;
+		std::vector<float> _prevHidden;
 
 		std::list<ReplaySample> _replaySamples;
 
@@ -94,14 +70,14 @@ namespace deep {
 
 		// Returns action index
 		void step(const std::vector<float> &state, std::vector<float> &action,
-			float reward, float qAlpha, float gamma, float lambdaGamma, float tauInv,
-			int actionSearchIterations, int actionSearchSamples, float actionSearchAlpha,
+			float reward, float qAlpha, float gamma, float lambdaGamma,
+			float actionAlpha, int actionSearchIterations, int actionSearchSamples, float actionSearchAlpha,
 			float breakChance, float perturbationStdDev,
-			int maxNumReplaySamples, int replayIterations, float gradientAlpha, float gradientMomentum,
+			int maxNumReplaySamples, int replayIterations, float gradientAlpha,
 			std::mt19937 &generator);
 
 		void activate();
-		void updateOnError(float error, float momentum);
+		void updateOnError(float error);
 
 		float freeEnergy() const;
 

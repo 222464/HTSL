@@ -71,7 +71,7 @@ namespace sc {
 
 		HTSLSARSA()
 			: _prevValue(0.0f), _prevNewQ(0.0f), _prevTdError(0.0f), _actionRandomizeChance(0.05f), _actionPerturbationStdDev(0.05f),
-			_qAlpha(0.02f), _qGamma(0.994f), _qTraceDecay(0.05f), _actionAlpha(0.8f), _actionBeta(1.0f), _actionTraceDecay(0.05f), _actionTraceTemperature(5.0f),
+			_qAlpha(0.005f), _qGamma(0.993f), _qTraceDecay(0.05f), _actionAlpha(0.2f), _actionBeta(1.0f), _actionTraceDecay(0.05f), _actionTraceTemperature(5.0f),
 			_actionAverageDecay(1.0f), _actionWeightDetermineAlpha(0.7f)
 		{}
 

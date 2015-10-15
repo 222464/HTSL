@@ -10,6 +10,8 @@
 #include <vis/Plot.h>
 #include <vis/PrettySDR.h>
 
+#include <iostream>
+
 int main() {
 	std::mt19937 generator(time(nullptr));
 
@@ -38,11 +40,11 @@ int main() {
 	layerDescs[2]._width = 8;
 	layerDescs[2]._height = 8;
 
-	htsl.createRandom(2, 2, layerDescs, generator);
+	htsl.createRandom(16, 16, layerDescs, generator);
 
-	int ticksPerSample = 2;
+	int ticksPerSample = 3;
 
-	int predSteps = 1;
+	int predSteps = 4;
 
 	int tickCounter = 0;
 
@@ -96,10 +98,15 @@ int main() {
 
 			prevMousePos = mousePos;
 
-			htsl.setInput(0, mousePos.x * 0.001f);
-			htsl.setInput(1, mousePos.y * 0.001f);
-			htsl.setInput(2, delta.x * 0.01f);
-			htsl.setInput(3, delta.y * 0.01f);
+			int px = std::min(15, std::max(0, static_cast<int>(16.0f * mousePos.x / static_cast<float>(renderWindow.getSize().x))));
+			int py = std::min(15, std::max(0, static_cast<int>(16.0f * mousePos.y / static_cast<float>(renderWindow.getSize().y))));
+
+			for (int i = 0; i < 256; i++)
+				htsl.setInput(i, 0.0f);
+
+			htsl.setInput(px, py, 1.0f);
+			//htsl.setInput(0, mousePos.x / static_cast<float>(renderWindow.getSize().x));
+			//htsl.setInput(1, mousePos.y / static_cast<float>(renderWindow.getSize().y));
 
 			htsl.update();
 			htsl.learn();
@@ -123,8 +130,21 @@ int main() {
 		}
 
 		sf::Vector2f predPos;
-		predPos.x = copy.getPrediction(0) * 1000.0f;
-		predPos.y = copy.getPrediction(1) * 1000.0f;
+
+		float div = 0.0f;
+
+		for (int i = 0; i < 256; i++) {
+			int x = i % 16;
+			int y = i / 16;
+
+			float v = copy.getPrediction(i);
+
+			predPos += v * sf::Vector2f(x / 16.0f * renderWindow.getSize().x, y / 16.0f * renderWindow.getSize().y);
+			div += v;
+		}
+
+		if (div != 0.0f)
+			predPos /= div;
 
 		predictRenderPos += 0.2f * (predPos - predictRenderPos);
 
@@ -190,7 +210,7 @@ int main() {
 
 			for (int x = 0; x < htsl.getLayerDescs()[l]._width; x++)
 				for (int y = 0; y < htsl.getLayerDescs()[l]._height; y++) {
-					psdr.at(x, y) = htsl.getLayers()[l]._rsc.getHiddenState(x, y);
+					psdr.at(x, y) = htsl.getLayers()[l]._predictionNodes[x + y * htsl.getLayerDescs()[l]._width]._spikesPrev;
 				}
 
 			psdr._nodeSpaceSize = scale;

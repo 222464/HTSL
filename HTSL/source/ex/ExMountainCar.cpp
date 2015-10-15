@@ -37,9 +37,11 @@ float ExMountainCar::runStep(Agent &agent, float dt) {
 	_velocity += (-_velocity * 0.01f + action * 0.001f + std::cos(3.0f * _position) * -0.0025f) * dt / 0.017f;
 	_position += _velocity * dt / 0.017f;
 
-	_prevFitness = height;
+	reward = std::max((1.0f - _rewardDecay) * reward, height);
 
-	return height;
+	_prevFitness = reward;
+
+	return reward;
 }
 
 void ExMountainCar::initializeVisualization() {

@@ -10,6 +10,7 @@
 #include <sc/HTSLQ.h>
 
 #include <deep/FERL.h>
+#include <deep/SelfOptimizingUnit.h>
 
 #include <iostream>
 
@@ -73,7 +74,7 @@ int main() {
 	float lastReward = 0.5f;
 
 	//sc::HTSLSARSA agentBlue;
-	sc::HTSLSARSA agentRed;
+	/*sc::HTSLSARSA agentRed;
 
 	std::vector<sc::HTSLSARSA::InputType> inputTypes(16);
 
@@ -84,7 +85,7 @@ int main() {
 		inputTypes[i] = sc::HTSLSARSA::_action;
 
 	for (int i = 14; i < 16; i++)
-		inputTypes[i] = sc::HTSLSARSA::_q;
+		inputTypes[i] = sc::HTSLSARSA::_q;*/
 
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 
@@ -98,13 +99,15 @@ int main() {
 	layerDescs[2]._height = 12;
 
 	//agentBlue.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
-	agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
+	//agentRed.createRandom(4, 4, 8, inputTypes, layerDescs, generator);
+	std::vector<float> prevActionBlue(4, 0.0f);
+	std::vector<float> prevActionRed(4, 0.0f);
 
-	//deep::FERL agentBlue;
-	//agentBlue.createRandom(12, 2, 32, 0.01f, generator);
+	deep::FERL agentBlue;
+	agentBlue.createRandom(12 + prevActionBlue.size(), 2 + prevActionBlue.size(), 32, 0.1f, generator);
 
-	//deep::FERL agentRed;
-	//agentRed.createRandom(12, 2, 32, 0.01f, generator);
+	deep::FERL agentRed;
+	agentRed.createRandom(12 + prevActionRed.size(), 2 + prevActionRed.size(), 32, 0.1f, generator);
 
 	// --------------------------------- Game Init -----------------------------------
 
@@ -135,7 +138,7 @@ int main() {
 	red._position = fieldCenter + sf::Vector2f(200.0f, 0.0f);
 	red._velocity = sf::Vector2f(0.0f, 0.0f);
 	ball._position = fieldCenter + sf::Vector2f(2.0f, -300.0f);
-	ball._velocity = sf::Vector2f((dist01(generator)) * 600.0f, -(dist01(generator)) * 500.0f);
+	ball._velocity = sf::Vector2f((dist01(generator) * 2.0f - 1.0f) * 600.0f, -(dist01(generator)) * 500.0f);
 
 	sf::Texture backgroundTexture;
 	backgroundTexture.loadFromFile("resources/slimevolleyball/background.png");
@@ -212,7 +215,7 @@ int main() {
 				red._position = fieldCenter + sf::Vector2f(200.0f, 0.0f);
 				red._velocity = sf::Vector2f(0.0f, 0.0f);
 				ball._position = fieldCenter + sf::Vector2f(2.0f, -300.0f);
-				ball._velocity = sf::Vector2f((dist01(generator)) * 600.0f, -(dist01(generator)) * 500.0f);
+				ball._velocity = sf::Vector2f((dist01(generator) * 2.0f - 1.0f) * 600.0f, -(dist01(generator)) * 500.0f);
 			}
 
 			// To wall
@@ -309,7 +312,7 @@ int main() {
 		}
 
 		// Blue slime
-		{		
+		/*{		
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
 			blue._position += blue._velocity * dt;
@@ -344,13 +347,13 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}
+		}*/
 
 		// Blue slime
-		/*{
+		{
 			const float scalar = 0.001f;
 			// Percepts
-			std::vector<float> inputs(12);
+			std::vector<float> inputs(12 + prevActionBlue.size());
 
 			int index = 0;
 
@@ -367,41 +370,38 @@ int main() {
 			inputs[index++] = blue._velocity.x * scalar;
 			inputs[index++] = blue._velocity.y * scalar;
 
+			for (int i = 0; i < prevActionBlue.size(); i++)
+				inputs[index++] = prevActionBlue[i];
+			
 			std::vector<float> outputs(2);
 
 			// Actions
-			for (int i = 0; i < 12; i++)
-				agentBlue.setState(i, inputs[i]);
+			//for (int i = 0; i < 12; i++)
+			//	agentBlue.setState(i, inputs[i]);
 
-			float reward = (ball._position.x > fieldCenter.x && prevBallX < fieldCenter.x ? 1.0f : 0.5f) * 0.5f + (scoreRed > prevScoreRed ? 0.0f : 0.5f) * 0.5f;
-
-			if (reward != 0.5f) {
-				lastReward = reward = reward > 0.5f ? 1.0f : 0.0f;
-				rewardTimer = 0.0f;
-			}
-			else if (rewardTimer < rewardTime) {
-				reward = lastReward;
-
-				rewardTimer += dt;
-			}
+			float reward = (ball._position.x > fieldCenter.x && prevBallX < fieldCenter.x ? 3.0f : 0.0f);// *0.5f + (scoreRed > prevScoreRed ? 0.0f : 0.5f) * 0.5f;
 
 			if (blueBounced)
-				reward = std::max(reward, 0.55f);
+				reward = std::max(reward, 1.0f);
 
-			reward = (reward * 2.0f - 1.0f) * 0.01f - std::abs(ball._position.x - blue._position.x) * 0.001f;
+			//reward = (reward * 2.0f - 1.0f) * 0.01f - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
-			//reward = (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.001f;
+			reward += (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.002f;
 
-			agentBlue.update(reward, generator);
+			//agentBlue.update(reward, generator);
 
-			float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
-			bool jump = agentBlue.getActionFromNodeIndex(1) > 0.5f;
+			//float move = agentBlue.getActionFromNodeIndex(0) * 2.0f - 1.0f;
+			//bool jump = agentBlue.getActionFromNodeIndex(1) > 0.5f;
+			//std::cout << reward << std::endl;
+			std::vector<float> action(2 + prevActionBlue.size());
 
-			//std::vector<float> action(2);
-			//agentBlue.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 64, 3, 0.02f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
+			agentBlue.step(inputs, action, reward, 0.5f, 0.99f, 0.98f, 0.01f, 32, 4, 0.05f, 0.04f, 0.15f, 600, 32, 0.01f, generator);
 
-			//float move = action[0];
-			//bool jump = action[1] > 0.0f;
+			for (int i = 0; i < prevActionBlue.size(); i++)
+				prevActionBlue[i] = action[2 + i];
+
+			float move = action[0];
+			bool jump = action[1] > 0.0f;
 
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
@@ -433,13 +433,13 @@ int main() {
 				blue._velocity.x = 0.0f;
 				blue._position.x = wallCenter.x - wallRadius - slimeRadius;
 			}
-		}*/
+		}
 
 		// Red slime
 		{
 			const float scalar = 0.001f;
 			// Percepts
-			std::vector<float> inputs(12);
+			std::vector<float> inputs(12 + prevActionRed.size());
 
 			int index = 0;
 
@@ -456,45 +456,42 @@ int main() {
 			inputs[index++] = blue._velocity.x * scalar;
 			inputs[index++] = blue._velocity.y * scalar;
 
+			for (int i = 0; i < prevActionRed.size(); i++)
+				inputs[index++] = prevActionRed[i];
+
 			//std::vector<float> outputs(2);
 
 			// Actions
-			for (int i = 0; i < 12; i++)
-				agentRed.setState(i, inputs[i]);
+			//for (int i = 0; i < 12; i++)
+			//	agentRed.setState(i, inputs[i]);
 
-			float reward = (ball._position.x < fieldCenter.x && prevBallX >= fieldCenter.x ? 1.0f : 0.5f);
-			
-			if (reward != 0.5f) {
-				lastReward = reward = reward > 0.5f ? 1.0f : 0.0f;
-				rewardTimer = 0.0f;
-			}
-			else if (rewardTimer < rewardTime) {
-				reward = lastReward;
-
-				rewardTimer += dt;
-			}
+			float reward = (ball._position.x < fieldCenter.x && prevBallX >= fieldCenter.x ? 3.0f : 0.0f);
 
 			if (redBounced)
-				reward = std::max(reward, 0.55f);
+				reward = std::max(reward, 1.0f);
 
-			reward = (reward * 2.0f - 1.0f) * 0.1f - std::abs(ball._position.x - red._position.x) * 0.008f;
+			//reward = (reward * 2.0f - 1.0f) * 0.1f - std::abs(ball._position.x - red._position.x) * 0.008f;
 
 			//reward *= 0.05f;
 
-			//reward = (scoreRed - prevScoreRed) - (scoreBlue - prevScoreBlue) - std::abs(ball._position.x - red._position.x) * 0.001f;
+			reward += (scoreRed - prevScoreRed) - (scoreBlue - prevScoreBlue) - std::abs(ball._position.x - red._position.x) * 0.002f;
 
 			//std::cout << "Reward: " << reward << std::endl;
 
 			//agentRed.update(reward, generator);
-			agentRed.update(reward, generator);
-			//std::vector<float> action(2);
-			//agentRed.step(inputs, action, reward, 0.01f, 0.995f, 0.99f, 10.0f, 32, 6, 0.05f, 0.04f, 0.04f, 800, 200, 0.003f, 0.0f, generator);
+			//agentRed.update(reward, generator);
+			std::vector<float> action(2 + prevActionRed.size());
 
-			//float move = action[0];
-			//bool jump = action[1] > 0.0f;
+			agentRed.step(inputs, action, reward, 0.5f, 0.99f, 0.98f, 0.01f, 32, 4, 0.05f, 0.04f, 0.15f, 600, 32, 0.01f, generator);
 
-			float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
-			bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
+			for (int i = 0; i < prevActionRed.size(); i++)
+				prevActionRed[i] = action[2 + i];
+
+			float move = action[0];
+			bool jump = action[1] > 0.0f;
+
+			//float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
+			//bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
 
 			red._velocity.y += gravity * dt;
 			red._velocity.x += -slimeMoveDeccel * red._velocity.x * dt;
@@ -682,7 +679,7 @@ int main() {
 
 			alignment = 0.0f;
 
-			for (int l = 0; l < agentRed.getHTSL().getLayers().size(); l++) {
+			/*for (int l = 0; l < agentRed.getHTSL().getLayers().size(); l++) {
 				sf::Image sdr;
 				sdr.create(agentRed.getHTSL().getLayerDescs()[l]._width, agentRed.getHTSL().getLayerDescs()[l]._height);
 
@@ -705,10 +702,10 @@ int main() {
 				sdrs.setScale(scale, scale);
 
 				renderWindow.draw(sdrs);	
-			}
+			}*/
 		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)) {
+		/*if (sf::Keyboard::isKeyPressed(sf::Keyboard::T)) {
 			sf::Vector2f position;
 
 			const float scalar = 1.0f / 0.001f;
@@ -729,7 +726,7 @@ int main() {
 				std::cout << agentRed.getHTSL().getPrediction(i) << std::endl;
 
 			std::cout << std::endl;
-		}
+		}*/
 		
 		renderWindow.display();
 	} while (!quit);

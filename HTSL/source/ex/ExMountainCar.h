@@ -17,8 +17,11 @@ namespace ex {
 		sf::VertexArray _hills;
 		sf::Texture _car;
 
+		float _reward;
+
 	public:
 		const float _pixelsPerMeter = 128.0f;
+		const float _rewardDecay = 0.01f;
 
 		ExMountainCar()
 			: _velocity(0.0f), _position(-0.5f), _prevFitness(0.0f), _prevVelocity(0.0f), _prevHeight(0.0f)
