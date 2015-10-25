@@ -10,7 +10,7 @@
 #include <sc/HTSLQ.h>
 
 #include <deep/FERL.h>
-#include <deep/SelfOptimizingUnit.h>
+#include <deep/SDRRL.h>
 
 #include <iostream>
 
@@ -103,11 +103,11 @@ int main() {
 	std::vector<float> prevActionBlue(4, 0.0f);
 	std::vector<float> prevActionRed(4, 0.0f);
 
-	deep::FERL agentBlue;
-	agentBlue.createRandom(12 + prevActionBlue.size(), 2 + prevActionBlue.size(), 32, 0.1f, generator);
+	deep::SDRRL agentBlue;
+	agentBlue.createRandom(12 + prevActionBlue.size(), 2 + prevActionBlue.size(), 64, -0.01f, 0.01f, 0.01f, 0.05f, 0.1f, generator);
 
-	deep::FERL agentRed;
-	agentRed.createRandom(12 + prevActionRed.size(), 2 + prevActionRed.size(), 32, 0.1f, generator);
+	deep::SDRRL agentRed;
+	agentRed.createRandom(12 + prevActionRed.size(), 2 + prevActionRed.size(), 64, -0.01f, 0.01f, 0.01f, 0.05f, 0.1f, generator);
 
 	// --------------------------------- Game Init -----------------------------------
 
@@ -379,14 +379,14 @@ int main() {
 			//for (int i = 0; i < 12; i++)
 			//	agentBlue.setState(i, inputs[i]);
 
-			float reward = (ball._position.x > fieldCenter.x && prevBallX < fieldCenter.x ? 3.0f : 0.0f);// *0.5f + (scoreRed > prevScoreRed ? 0.0f : 0.5f) * 0.5f;
+			//float reward = (ball._position.x > fieldCenter.x && prevBallX < fieldCenter.x ? 5.0f : 0.0f);// *0.5f + (scoreRed > prevScoreRed ? 0.0f : 0.5f) * 0.5f;
 
-			if (blueBounced)
-				reward = std::max(reward, 1.0f);
+			//if (blueBounced)
+			//	reward = std::max(reward, 1.0f);
 
 			//reward = (reward * 2.0f - 1.0f) * 0.01f - std::abs(ball._position.x - blue._position.x) * 0.001f;
 
-			reward += (scoreBlue - prevScoreBlue) - (scoreRed - prevScoreRed) - std::abs(ball._position.x - blue._position.x) * 0.002f;
+			float reward = (scoreBlue - prevScoreBlue) * 5.0f - (scoreRed - prevScoreRed) * 5.0f + (blueBounced ? 1.0f : 0.0f);
 
 			//agentBlue.update(reward, generator);
 
@@ -395,13 +395,19 @@ int main() {
 			//std::cout << reward << std::endl;
 			std::vector<float> action(2 + prevActionBlue.size());
 
-			agentBlue.step(inputs, action, reward, 0.5f, 0.99f, 0.98f, 0.01f, 32, 4, 0.05f, 0.04f, 0.15f, 600, 32, 0.01f, generator);
+			for (int i = 0; i < inputs.size(); i++)
+				agentBlue.setState(i, inputs[i]);
+
+			agentBlue.simStep(reward, 0.065f, 0.995f, 0.005f, 0.05f, 0.002f, 0.004f, 0.01f, 48, 0.05f, 0.988f, 0.05f, 0.01f, 0.01f, 4.0f, generator);
+
+			for (int i = 0; i < action.size(); i++)
+				action[i] = agentBlue.getAction(i);
 
 			for (int i = 0; i < prevActionBlue.size(); i++)
 				prevActionBlue[i] = action[2 + i];
 
-			float move = action[0];
-			bool jump = action[1] > 0.0f;
+			float move = action[0] * 2.0f - 1.0f;
+			bool jump = action[1] > 0.5f;
 
 			blue._velocity.y += gravity * dt;
 			blue._velocity.x += -slimeMoveDeccel * blue._velocity.x * dt;
@@ -465,16 +471,16 @@ int main() {
 			//for (int i = 0; i < 12; i++)
 			//	agentRed.setState(i, inputs[i]);
 
-			float reward = (ball._position.x < fieldCenter.x && prevBallX >= fieldCenter.x ? 3.0f : 0.0f);
+			//float reward = (ball._position.x < fieldCenter.x && prevBallX >= fieldCenter.x ? 5.0f : 0.0f);
 
-			if (redBounced)
-				reward = std::max(reward, 1.0f);
+			//if (redBounced)
+			//	reward = std::max(reward, 1.0f);
 
 			//reward = (reward * 2.0f - 1.0f) * 0.1f - std::abs(ball._position.x - red._position.x) * 0.008f;
 
 			//reward *= 0.05f;
 
-			reward += (scoreRed - prevScoreRed) - (scoreBlue - prevScoreBlue) - std::abs(ball._position.x - red._position.x) * 0.002f;
+			float reward = (scoreRed - prevScoreRed) * 5.0f - (scoreBlue - prevScoreBlue) * 5.0f + (redBounced ? 1.0f : 0.0f);
 
 			//std::cout << "Reward: " << reward << std::endl;
 
@@ -482,13 +488,19 @@ int main() {
 			//agentRed.update(reward, generator);
 			std::vector<float> action(2 + prevActionRed.size());
 
-			agentRed.step(inputs, action, reward, 0.5f, 0.99f, 0.98f, 0.01f, 32, 4, 0.05f, 0.04f, 0.15f, 600, 32, 0.01f, generator);
+			for (int i = 0; i < inputs.size(); i++)
+				agentRed.setState(i, inputs[i]);
+
+			agentRed.simStep(reward, 0.065f, 0.995f, 0.005f, 0.05f, 0.002f, 0.004f, 0.01f, 48, 0.05f, 0.988f, 0.05f, 0.01f, 0.01f, 4.0f, generator);
+
+			for (int i = 0; i < action.size(); i++)
+				action[i] = agentRed.getAction(i);
 
 			for (int i = 0; i < prevActionRed.size(); i++)
 				prevActionRed[i] = action[2 + i];
 
-			float move = action[0];
-			bool jump = action[1] > 0.0f;
+			float move = action[0] * 2.0f - 1.0f;
+			bool jump = action[1] > 0.5f;
 
 			//float move = agentRed.getActionFromNodeIndex(0) * 2.0f - 1.0f;
 			//bool jump = agentRed.getActionFromNodeIndex(1) > 0.5f;
@@ -652,14 +664,14 @@ int main() {
 
 			float alignment = 0.0f;
 
-			/*for (int l = 0; l < agentBlue.getHTSL().getLayers().size(); l++) {
+			{
 				sf::Image sdr;
-				sdr.create(agentBlue.getHTSL().getLayerDescs()[l]._width, agentBlue.getHTSL().getLayerDescs()[l]._height);
+				sdr.create(agentBlue.getNumCells(), 1);
 
-				for (int x = 0; x < agentBlue.getHTSL().getLayerDescs()[l]._width; x++)
-					for (int y = 0; y < agentBlue.getHTSL().getLayerDescs()[l]._height; y++) {
+				for (int x = 0; x < agentBlue.getNumCells(); x++)
+					for (int y = 0; y < 1; y++) {
 						sf::Color c;
-						c.r = c.g = c.b = agentBlue.getHTSL().getLayers()[l]._rsc.getHiddenState(x, y) * 255.0f;
+						c.r = c.g = c.b = agentBlue.getCellState(x) * 255.0f;
 
 						sdr.setPixel(x, y, c);
 					}
@@ -675,7 +687,7 @@ int main() {
 				renderWindow.draw(sdrs);
 
 				alignment += scale * sdr.getSize().x;
-			}*/
+			}
 
 			alignment = 0.0f;
 
