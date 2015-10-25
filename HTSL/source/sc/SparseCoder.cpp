@@ -44,8 +44,7 @@ void SparseCoder::createRandom(int visibleSize, int hiddenSize, int receptiveRad
 
 				c._weight = weightDist(generator) * 2.0 - 1.0;
 				c._index = v;
-				c._falloff = 1.0;// std::max(0.0, 1.0 - std::abs(v) / static_cast<double>(receptiveRadius + 1));
-
+		
 				dist2 += c._weight * c._weight;
 
 				_hidden[hi]._visibleHiddenConnections.push_back(c);
@@ -75,8 +74,7 @@ void SparseCoder::createRandom(int visibleSize, int hiddenSize, int receptiveRad
 
 				c._weight = weightDist(generator);
 				c._index = h;
-				c._falloff = std::max(0.0, 1.0 - std::abs(h) / static_cast<double>(inhibitionRadius + 1));
-
+	
 				dist2 += c._weight * c._weight;
 
 				_hidden[hi]._hiddenHiddenConnections.push_back(c);
@@ -92,28 +90,28 @@ void SparseCoder::createRandom(int visibleSize, int hiddenSize, int receptiveRad
 	}
 }
 
-void SparseCoder::activate(double excitation) {
+void SparseCoder::activate() {
 	// Activate
 	for (int hi = 0; hi < _hidden.size(); hi++) {
-		double sum = _hidden[hi]._bias;
+		double sum = 0.0;
 
 		for (int ci = 0; ci < _hidden[hi]._visibleHiddenConnections.size(); ci++) {
 			double delta = _visible[_hidden[hi]._visibleHiddenConnections[ci]._index]._input - _hidden[hi]._visibleHiddenConnections[ci]._weight;
 
-			sum += _hidden[hi]._visibleHiddenConnections[ci]._falloff * delta * delta;
+			sum += -delta * delta;
 		}
 
-		_hidden[hi]._activation = -sum;
+		_hidden[hi]._activation = sum;
 	}
 
 	// Inhibit
 	for (int hi = 0; hi < _hidden.size(); hi++) {
-		double inhibition = 0.0;
+		double inhibition = _hidden[hi]._bias;
 
 		for (int ci = 0; ci < _hidden[hi]._hiddenHiddenConnections.size(); ci++)
-			inhibition += _hidden[hi]._hiddenHiddenConnections[ci]._weight * _hidden[hi]._hiddenHiddenConnections[ci]._falloff * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0 : 0.0);
+			inhibition += _hidden[hi]._hiddenHiddenConnections[ci]._weight * (_hidden[_hidden[hi]._hiddenHiddenConnections[ci]._index]._activation > _hidden[hi]._activation ? 1.0 : 0.0);
 
-		_hidden[hi]._state = (excitation - inhibition) > 0.0 ? 1.0 : 0.0;
+		_hidden[hi]._state = (1.0 - inhibition) > 0.0 ? 1.0 : 0.0;
 	}
 }
 

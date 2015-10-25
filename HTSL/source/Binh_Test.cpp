@@ -130,7 +130,7 @@ int main()
 			// z - index of PQRSTU: P=1, Q=2, R= 3, S=4, T=5, U=6
 			float value = y*4;	// without amplifying the amplitude, it is very difficult to make a sequence pattern QRST
 #else
-			float value = anomalyOffset + anomalyAmpl*std::sin(0.125f * 3.141596f * index * anomalyFreq + anomalyPhase);
+			float value = anomalyOffset + anomalyAmpl*std::sin(0.125f * 3.141596f * index * anomalyFreq + anomalyPhase) + 0.5f * std::sin(0.3f * 3.141596f * index * anomalyFreq + anomalyPhase);
 #endif
 
 #ifndef __USE_PREDICTIVE_RSDR____

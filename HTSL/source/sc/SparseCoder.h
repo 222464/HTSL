@@ -36,8 +36,6 @@ namespace sc {
 
 			double _weight;
 
-			double _falloff;
-
 			VisibleConnection()
 			{}
 		};
@@ -46,8 +44,6 @@ namespace sc {
 			unsigned short _index;
 
 			double _weight;
-
-			double _falloff;
 
 			HiddenConnection()
 			{}
@@ -89,8 +85,7 @@ namespace sc {
 	public:
 		void createRandom(int visibleSize, int hiddenSize, int receptiveRadius, int inhibitionRadius, double weightScale, std::mt19937 &generator);
 
-		// delta = D * (x - Dh) - lambda * h / (sqrt(h^2 + e))
-		void activate(double excitation = 1.0);
+		void activate();
 		void reconstruct();
 		void reconstruct(const std::vector<double> &hiddenStates, std::vector<double> &recon);
 		void learn(double alpha, double beta, double gamma, double sparsity);

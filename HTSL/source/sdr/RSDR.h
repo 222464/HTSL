@@ -23,6 +23,7 @@ namespace sdr {
 			float _statePrev;
 			float _spike;
 			float _spikePrev;
+			float _averageState;
 
 			float _excitation;
 			float _activation;
@@ -30,7 +31,7 @@ namespace sdr {
 			float _reconstruction;
 
 			HiddenNode()
-				: _state(0.0f), _statePrev(0.0f), _spike(0.0f), _spikePrev(0.0f), _excitation(0.0f), _activation(0.0f), _reconstruction(0.0f)
+				: _state(0.0f), _statePrev(0.0f), _spike(0.0f), _spikePrev(0.0f), _averageState(0.0f), _excitation(0.0f), _activation(0.0f), _reconstruction(0.0f)
 			{}
 		};
 
@@ -60,8 +61,8 @@ namespace sdr {
 
 		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, float initMinInhibition, float initMaxInhibition, float initThreshold, std::mt19937 &generator);
 
-		void activate(int subIter, float leak);
-		void inhibit(int subIter, float leak, const std::vector<float> &activations, std::vector<float> &states);
+		void activate(int subIterSettle, int subIterMeasure, float leak);
+		void inhibit(int subIterSettle, int subIterMeasure, float leak, const std::vector<float> &activations, std::vector<float> &states);
 		void reconstruct();
 		void reconstructFeedForward(const std::vector<float> &states, std::vector<float> &recon);
 		void learn(float learnFeedForward, float learnRecurrent, float learnLateral, float learnThreshold, float sparsity);

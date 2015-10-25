@@ -119,7 +119,7 @@ void RSDR::createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, in
 	}
 }
 
-void RSDR::activate(int subIter, float leak) {
+void RSDR::activate(int subIterSettle, int subIterMeasure, float leak) {
 	// Activate
 	for (int hi = 0; hi < _hidden.size(); hi++) {
 		float sum = 0.0f;
@@ -135,12 +135,13 @@ void RSDR::activate(int subIter, float leak) {
 		_hidden[hi]._spikePrev = 0.0f;
 		_hidden[hi]._activation = 0.0f;
 		_hidden[hi]._state = 0.0f;
+		_hidden[hi]._averageState = 0.0f;
 	}
 
 	// Inhibit
-	float subIterInv = 1.0f / subIter;
+	float subIterMeasureInv = 1.0f / subIterMeasure;
 
-	for (int iter = 0; iter < subIter; iter++) {
+	for (int iter = 0; iter < subIterSettle; iter++) {
 		for (int hi = 0; hi < _hidden.size(); hi++) {
 			float inhibition = 0.0f;
 
@@ -151,7 +152,6 @@ void RSDR::activate(int subIter, float leak) {
 
 			if (activation > _hidden[hi]._threshold) {
 				_hidden[hi]._spike = 1.0f;
-				_hidden[hi]._state += subIterInv;
 
 				activation = 0.0f;
 			}
@@ -160,10 +160,39 @@ void RSDR::activate(int subIter, float leak) {
 
 			_hidden[hi]._activation = activation;
 		}
+
+		for (int hi = 0; hi < _hidden.size(); hi++)
+			_hidden[hi]._spikePrev = _hidden[hi]._spike;
+	}
+
+	for (int iter = 0; iter < subIterMeasure; iter++) {
+		for (int hi = 0; hi < _hidden.size(); hi++) {
+			float inhibition = 0.0f;
+
+			for (int ci = 0; ci < _hidden[hi]._lateralConnections.size(); ci++)
+				inhibition += _hidden[hi]._lateralConnections[ci]._weight * _hidden[_hidden[hi]._lateralConnections[ci]._index]._spikePrev;
+
+			float activation = (1.0f - leak) * _hidden[hi]._activation + _hidden[hi]._excitation - inhibition;
+
+			if (activation > _hidden[hi]._threshold) {
+				_hidden[hi]._spike = 1.0f;
+
+				_hidden[hi]._state += subIterMeasureInv;
+
+				activation = 0.0f;
+			}
+			else
+				_hidden[hi]._spike = 0.0f;
+
+			_hidden[hi]._activation = activation;
+		}
+
+		for (int hi = 0; hi < _hidden.size(); hi++)
+			_hidden[hi]._spikePrev = _hidden[hi]._spike;
 	}
 }
 
-void RSDR::inhibit(int subIter, float leak, const std::vector<float> &activations, std::vector<float> &states) {
+void RSDR::inhibit(int subIterSettle, int subIterMeasure, float leak, const std::vector<float> &activations, std::vector<float> &states) {
 	states.clear();
 	states.assign(_hidden.size(), 0.0f);
 
@@ -175,9 +204,9 @@ void RSDR::inhibit(int subIter, float leak, const std::vector<float> &activation
 	}
 
 	// Inhibit
-	float subIterInv = 1.0f / subIter;
+	float subIterMeasureInv = 1.0f / subIterMeasure;
 
-	for (int iter = 0; iter < subIter; iter++) {
+	for (int iter = 0; iter < subIterSettle; iter++) {
 		for (int hi = 0; hi < _hidden.size(); hi++) {
 			float inhibition = 0.0f;
 
@@ -188,7 +217,32 @@ void RSDR::inhibit(int subIter, float leak, const std::vector<float> &activation
 
 			if (activation > _hidden[hi]._threshold) {
 				_hidden[hi]._spike = 1.0f;
-				states[hi] += subIterInv;
+				
+				activation = 0.0f;
+			}
+			else
+				_hidden[hi]._spike = 0.0f;
+
+			_hidden[hi]._activation = activation;
+		}
+
+		for (int hi = 0; hi < _hidden.size(); hi++)
+			_hidden[hi]._spikePrev = _hidden[hi]._spike;
+	}
+
+	for (int iter = 0; iter < subIterMeasure; iter++) {
+		for (int hi = 0; hi < _hidden.size(); hi++) {
+			float inhibition = 0.0f;
+
+			for (int ci = 0; ci < _hidden[hi]._lateralConnections.size(); ci++)
+				inhibition += _hidden[hi]._lateralConnections[ci]._weight * _hidden[_hidden[hi]._lateralConnections[ci]._index]._spikePrev;
+
+			float activation = (1.0f - leak) * _hidden[hi]._activation + _hidden[hi]._excitation - inhibition;
+
+			if (activation > _hidden[hi]._threshold) {
+				_hidden[hi]._spike = 1.0f;
+
+				states[hi] += subIterMeasureInv;
 
 				activation = 0.0f;
 			}
@@ -197,6 +251,9 @@ void RSDR::inhibit(int subIter, float leak, const std::vector<float> &activation
 
 			_hidden[hi]._activation = activation;
 		}
+
+		for (int hi = 0; hi < _hidden.size(); hi++)
+			_hidden[hi]._spikePrev = _hidden[hi]._spike;
 	}
 }
 
@@ -266,10 +323,10 @@ void RSDR::learn(float learnFeedForward, float learnRecurrent, float learnLatera
 
 		if (learn > 0.0f) {
 			for (int ci = 0; ci < _hidden[hi]._feedForwardConnections.size(); ci++)
-				_hidden[hi]._feedForwardConnections[ci]._weight += learnFeedForward * visibleErrors[_hidden[hi]._feedForwardConnections[ci]._index];
+				_hidden[hi]._feedForwardConnections[ci]._weight += learnFeedForward * learn * visibleErrors[_hidden[hi]._feedForwardConnections[ci]._index];
 
 			for (int ci = 0; ci < _hidden[hi]._recurrentConnections.size(); ci++)
-				_hidden[hi]._recurrentConnections[ci]._weight += learnRecurrent * hiddenErrors[_hidden[hi]._recurrentConnections[ci]._index];
+				_hidden[hi]._recurrentConnections[ci]._weight += learnRecurrent * learn * hiddenErrors[_hidden[hi]._recurrentConnections[ci]._index];
 		}
 
 		for (int ci = 0; ci < _hidden[hi]._lateralConnections.size(); ci++)

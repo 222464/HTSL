@@ -20,7 +20,8 @@ namespace sdr {
 
 			float _learnFeedBack, _learnPrediction;
 
-			int _subIter;
+			int _subIterSettle;
+			int _subIterMeasure;
 			float _leak;
 
 			float _averageSurpriseDecay;
@@ -31,12 +32,12 @@ namespace sdr {
 			LayerDesc()
 				: _width(16), _height(16),
 				_receptiveRadius(16), _recurrentRadius(6), _lateralRadius(5), _predictiveRadius(7), _feedBackRadius(8),
-				_learnFeedForward(0.01f), _learnRecurrent(0.01f), _learnLateral(0.03f), _learnThreshold(0.01f),
-				_learnFeedBack(0.2f), _learnPrediction(0.2f),
-				_subIter(50), _leak(0.01f),
+				_learnFeedForward(0.01f), _learnRecurrent(0.01f), _learnLateral(0.1f), _learnThreshold(0.01f),
+				_learnFeedBack(0.1f), _learnPrediction(0.1f),
+				_subIterSettle(17), _subIterMeasure(17), _leak(0.1f),
 				_averageSurpriseDecay(0.01f),
 				_attentionFactor(4.0f),
-				_sparsity(0.05f)
+				_sparsity(0.01f)
 			{}
 		};
 
