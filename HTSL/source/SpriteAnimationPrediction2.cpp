@@ -95,9 +95,9 @@ public:
 };
 
 void generateCountSequence() {
-	const int numCount = 40;
-	const int width = 32;
-	const int height = 32;
+	const int numCount = 1;
+	const int width = 64;
+	const int height = 48;
 
 	int root = std::ceil(std::sqrt(static_cast<float>(numCount)));
 
@@ -143,15 +143,15 @@ int main() {
 
 	//generateCountSequence();
 
-	const int frameWidth = 32;
-	const int frameHeight = 32;
-	const int numFrames = 40;
+	const int frameWidth = 64;
+	const int frameHeight = 48;
+	const int numFrames = 90;
 
-	//FileAnimation animation;
-	//animation.loadFromFile("resources/rendersequence/rendersequence_", ".png", numFrames);
+	FileAnimation animation;
+	animation.loadFromFile("resources/rendersequence2/rendersequence_", ".png", numFrames);
 
-	Animation animation;
-	animation.loadFromFile("resources/numberSequence.png");
+	//Animation animation;
+	//animation.loadFromFile("resources/numberSequence.png");
 
 	sdr::PredictiveRSDR rsdr;
 
@@ -201,9 +201,9 @@ int main() {
 		renderWindow.clear();
 
 		sf::Image subImage;
-		animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
+		//animation.getSubImage(frameWidth, frameHeight, frameCounter, subImage);
 
-		//subImage = animation._images[frameCounter];
+		subImage = animation._images[frameCounter];
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 			for (int x = 0; x < frameWidth; x++)
@@ -228,67 +228,71 @@ int main() {
 
 		change = !change;
 
-		sf::Image predictionImage;
-		predictionImage.create(frameWidth, frameHeight);
+		if (!sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+			sf::Image predictionImage;
+			predictionImage.create(frameWidth, frameHeight);
 
-		for (int x = 0; x < frameWidth; x++)
-			for (int y = 0; y < frameHeight; y++) {
-				sf::Color c;
-				c.r = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 0, y)));
-				c.g = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 1, y)));
-				c.b = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 2, y)));
-
-				predictionImage.setPixel(x, y, c);
-			}
-
-		sf::Texture predictionTexture;
-		predictionTexture.loadFromImage(predictionImage);
-
-		const float scale = 3.0f;
-
-		sf::Sprite p;
-		p.setTexture(predictionTexture);
-		p.setPosition(renderWindow.getSize().x - frameWidth * scale, 0.0f);
-
-		p.setScale(scale, scale);
-
-		renderWindow.draw(p);
-
-		sf::Sprite s;
-
-		//s.setTexture(animation._textures[frameCounter]);
-		s.setTexture(animation._texture);
-		s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
-
-		s.setScale(scale, scale);
-
-		renderWindow.draw(s);
-
-		float alignment = 0.0f;
-
-		for (int l = 0; l < rsdr.getLayers().size(); l++) {
-			sf::Image sdr;
-			sdr.create(rsdr.getLayerDescs()[l]._width, rsdr.getLayerDescs()[l]._height);
-
-			for (int x = 0; x < rsdr.getLayerDescs()[l]._width; x++)
-				for (int y = 0; y < rsdr.getLayerDescs()[l]._height; y++) {
+			for (int x = 0; x < frameWidth; x++)
+				for (int y = 0; y < frameHeight; y++) {
 					sf::Color c;
-					c.r = c.g = c.b = rsdr.getLayers()[l]._sdr.getHiddenState(x, y) * 255.0f;
+					c.r = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 0, y)));
+					c.g = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 1, y)));
+					c.b = 255.0f * std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 2, y)));
 
-					sdr.setPixel(x, y, c);
+					predictionImage.setPixel(x, y, c);
 				}
 
-			sf::Texture sdrt;
-			sdrt.loadFromImage(sdr);
+			sf::Texture predictionTexture;
+			predictionTexture.loadFromImage(predictionImage);
 
-			sf::Sprite sdrs;
-			sdrs.setTexture(sdrt);
-			sdrs.setPosition(alignment, renderWindow.getSize().y - sdr.getSize().y * scale);
-			sdrs.setScale(scale, scale);
+			const float scale = 3.0f;
 
-			renderWindow.draw(sdrs);
+			sf::Sprite p;
+			p.setTexture(predictionTexture);
+			p.setPosition(renderWindow.getSize().x - frameWidth * scale, 0.0f);
 
-			alignment += scale * sdr.getSize().x;
+			p.setScale(scale, scale);
+
+			renderWindow.draw(p);
+
+			sf::Sprite s;
+
+			s.setTexture(animation._textures[frameCounter]);
+			//s.setTexture(animation._texture);
+			//s.setTextureRect(animation.getSubRect(frameWidth, frameHeight, frameCounter));
+
+			s.setScale(scale, scale);
+
+			renderWindow.draw(s);
+
+			float alignment = 0.0f;
+
+			for (int l = 0; l < rsdr.getLayers().size(); l++) {
+				sf::Image sdr;
+				sdr.create(rsdr.getLayerDescs()[l]._width, rsdr.getLayerDescs()[l]._height);
+
+				for (int x = 0; x < rsdr.getLayerDescs()[l]._width; x++)
+					for (int y = 0; y < rsdr.getLayerDescs()[l]._height; y++) {
+						sf::Color c;
+						c.r = c.g = c.b = rsdr.getLayers()[l]._predictionNodes[x + y * rsdr.getLayerDescs()[l]._width]._state * 255.0f;
+
+						sdr.setPixel(x, y, c);
+					}
+
+				sf::Texture sdrt;
+				sdrt.loadFromImage(sdr);
+
+				sf::Sprite sdrs;
+				sdrs.setTexture(sdrt);
+				sdrs.setPosition(alignment, renderWindow.getSize().y - sdr.getSize().y * scale);
+				sdrs.setScale(scale, scale);
+
+				renderWindow.draw(sdrs);
+
+				alignment += scale * sdr.getSize().x;
+			}
+
+			renderWindow.display();
 		}
 
 		int prevFC = frameCounter;
@@ -297,8 +301,6 @@ int main() {
 
 		if (prevFC > frameCounter)
 			change = !change;
-
-		renderWindow.display();
 	} while (!quit);
 
 	return 0;

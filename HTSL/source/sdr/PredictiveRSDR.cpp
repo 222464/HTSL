@@ -37,6 +37,8 @@ void PredictiveRSDR::createRandom(int inputWidth, int inputHeight, const std::ve
 		for (int pi = 0; pi < _layers[l]._predictionNodes.size(); pi++) {
 			PredictionNode &p = _layers[l]._predictionNodes[pi];
 
+			p._bias._weight = weightDist(generator);
+
 			int hx = pi % _layerDescs[l]._width;
 			int hy = pi / _layerDescs[l]._width;
 
@@ -98,7 +100,7 @@ void PredictiveRSDR::createRandom(int inputWidth, int inputHeight, const std::ve
 void PredictiveRSDR::simStep(bool learn) {
 	// Feature extraction
 	for (int l = 0; l < _layers.size(); l++) {
-		_layers[l]._sdr.activate(_layerDescs[l]._subIterSettle, _layerDescs[l]._subIterMeasure, _layerDescs[l]._leak);
+		_layers[l]._sdr.activate(_layerDescs[l]._sparsity);
 
 		_layers[l]._sdr.reconstruct();
 
@@ -159,7 +161,7 @@ void PredictiveRSDR::simStep(bool learn) {
 		}
 
 		// Inhibit to find state
-		_layers[l]._sdr.inhibit(_layerDescs[l]._subIterSettle, _layerDescs[l]._subIterMeasure, _layerDescs[l]._leak, predictionActivations, predictionStates);
+		_layers[l]._sdr.inhibit(_layerDescs[l]._sparsity, predictionActivations, predictionStates);
 
 		for (int pi = 0; pi < _layers[l]._predictionNodes.size(); pi++) {
 			PredictionNode &p = _layers[l]._predictionNodes[pi];

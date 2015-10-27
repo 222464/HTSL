@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-#include <sc/HTSL.h>
+#include <sdr/PredictiveRSDR.h>
 #include <hyp/BayesianOptimizer.h>
 
 /*
@@ -104,7 +104,7 @@ int main() {
 
 	int rootSize = std::ceil(std::sqrt(static_cast<float>(uniqueChars.size())));
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
+	std::vector<sdr::PredictiveRSDR::LayerDesc> layerDescs(3);
 
 	layerDescs[0]._width = 8;
 	layerDescs[0]._height = 8;
@@ -116,22 +116,20 @@ int main() {
 	layerDescs[2]._height = 4;
 
 	{
-		sc::HTSL htsl;
+		sdr::PredictiveRSDR rsdr;
 
-		htsl.createRandom(rootSize, rootSize, layerDescs, generator);
+		rsdr.createRandom(rootSize, rootSize, 16, layerDescs, -0.001f, 0.001f, 0.01f, 0.05f, 0.1f, generator);
 
 		// Train
 		for (int iter = 0; iter < 40; iter++) {
 			for (int c = 0; c < text.length(); c++) {
 				for (int i = 0; i < uniqueChars.size(); i++)
-					htsl.setInput(i, 0.0f);
+					rsdr.setInput(i, 0.0f);
 
-				htsl.setInput(charToInputIndex[text[c]], 1.0f);
+				rsdr.setInput(charToInputIndex[text[c]], 1.0f);
 
-				htsl.update();
-				htsl.learn();
-				htsl.stepEnd();
-
+				rsdr.simStep();
+			
 				if (c % 100 == 0)
 					std::cout << "Steps: " << c << std::endl;
 			}
@@ -141,12 +139,11 @@ int main() {
 
 		// Generate
 		for (int i = 0; i < uniqueChars.size(); i++)
-			htsl.setInput(i, 0.0f);
+			rsdr.setInput(i, 0.0f);
 
-		htsl.setInput(charToInputIndex[text[0]], 1.0f);
+		rsdr.setInput(charToInputIndex[text[0]], 1.0f);
 
-		htsl.update();
-		htsl.stepEnd();
+		rsdr.simStep(false);
 
 		std::cout << "Example string: " << std::endl;
 
@@ -158,7 +155,7 @@ int main() {
 			int maxIndex = 0;
 
 			for (int i = 1; i < uniqueChars.size(); i++)
-				if (htsl.getPrediction(i) > htsl.getPrediction(maxIndex))
+				if (rsdr.getPrediction(i) > rsdr.getPrediction(maxIndex))
 					maxIndex = i;
 
 			std::cout << inputIndexToChar[maxIndex];
@@ -167,12 +164,11 @@ int main() {
 				numCorrect++;
 
 			for (int i = 0; i < uniqueChars.size(); i++)
-				htsl.setInput(i, 0.0f);
+				rsdr.setInput(i, 0.0f);
 
-			htsl.setInput(maxIndex, 1.0f);
+			rsdr.setInput(maxIndex, 1.0f);
 
-			htsl.update();
-			htsl.stepEnd();
+			rsdr.simStep(false);
 		}
 
 		std::cout << std::endl;
