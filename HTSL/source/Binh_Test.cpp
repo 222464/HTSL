@@ -49,15 +49,15 @@ int main()
 	std::vector<sdr::PredictiveRSDR::LayerDesc> layerDescs(3);
 #endif
 	// lowest layer (connected to sensor)
-	layerDescs[0]._width  = 16;		// hidden layer width
-	layerDescs[0]._height = 16;		// hidden layer height
+	layerDescs[0]._width  = 32;		// hidden layer width
+	layerDescs[0]._height = 32;		// hidden layer height
 
-	layerDescs[1]._width  = 8;
-	layerDescs[1]._height = 8;
+	layerDescs[1]._width  = 16;
+	layerDescs[1]._height = 16;
 
 	// highest level
-	layerDescs[2]._width  = 4;
-	layerDescs[2]._height = 4;
+	layerDescs[2]._width  = 8;
+	layerDescs[2]._height = 8;
 	
 	// the input images is color, that is why, we need frameWidth * 3
 	//                visible_width,  visible_height, 

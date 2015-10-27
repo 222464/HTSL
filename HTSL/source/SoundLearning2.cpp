@@ -18,12 +18,12 @@
 #include <sc/SparseCoder.h>
 #include <sc/ISparseCoder.h>
 #include <sc/BISparseCoder.h>
-#include <deep/AutoEncoder.h>
+#include <sdr/PredictiveRSDR.h>
 
 #include <complex>
 #include <valarray>
 
-#define RECONSTRUCT_DIRECT 0
+#define RECONSTRUCT_DIRECT 1
 
 const float pi = 3.14159265359;
 
@@ -69,7 +69,7 @@ void ifft(CArray& x) {
 }
 
 const int aeSamplesSize = 1024;
-const int aeFeatures = 256;
+const int aeFeatures = 1024;
 const float sampleScalar = 1.0f / std::pow(2.0f, 15.0f);
 const float sampleScalarInv = 1.0f / sampleScalar;
 const int reconStride = 512;
@@ -108,35 +108,41 @@ int main() {
 
 	buffer.loadFromFile("testSound.wav");
 
-	sc::SparseCoder ae;
+	sdr::RSDR ae;
 
-	ae.createRandom(aeSamplesSize, aeFeatures, aeSamplesSize / 2, aeFeatures / 2, 0.001, generator);
+	int dimV = std::ceil(std::sqrt(static_cast<float>(aeSamplesSize)));
+	int dimH = std::ceil(std::sqrt(static_cast<float>(aeFeatures)));
+
+	ae.createRandom(dimV, dimV, dimH, dimH, 24, 12, -1, -0.001f, 0.001f, 0.01f, 0.1f, 0.0f, generator);
 
 	std::cout << "Training low-level feature extractor..." << std::endl;
 
 	std::uniform_int_distribution<int> soundDist(0, buffer.getSampleCount() - aeSamplesSize - 1);
 
-	int featureIter = 5000;
+	int featureIter = 12000;
 
-	int iIter = 50;
-	float iStepSize = 0.1f;
-	float iLambda = 0.5f;
-	float iEpsilon = 0.001f;
-	float iStdDev = 0.01f;
+	float sparsity = 0.01f;
+
+	std::valarray<Complex> fftArray(aeSamplesSize);
 
 	for (int t = 0; t < featureIter; t++) {
 		int i = soundDist(generator);
 
 		for (int s = 0; s < aeSamplesSize; s++)
-			ae.setVisibleInput(s, compress(buffer.getSamples()[i + s]));
+			fftArray[s] = Complex(compress(buffer.getSamples()[i + s]));
 
-		ae.activate();
+		//fft(fftArray);
+
+		for (int s = 0; s < aeSamplesSize; s++)
+			ae.setVisibleInput(s, fftArray[s].real());
+
+		ae.activate(sparsity);
 
 		ae.reconstruct();
 
-		ae.learn(0.4, 0.05, 0.05, 0.05);
+		ae.learn(0.05f, 0.05f, 0.05f, 0.1f, sparsity);
 
-		if (t % 1000 == 0) {
+		if (t % 100 == 0) {
 			std::cout << (static_cast<float>(t) / featureIter * 100.0f) << "%" << std::endl;
 		}
 	}
@@ -154,11 +160,21 @@ int main() {
 
 	for (int i = 0; i < buffer.getSampleCount() - aeSamplesSize; i += reconStride) {
 		for (int s = 0; s < aeSamplesSize; s++)
-			ae.setVisibleInput(s, compress(buffer.getSamples()[i + s]));
+			fftArray[s] = Complex(compress(buffer.getSamples()[i + s]));
 
-		ae.activate();
+		//fft(fftArray);
+
+		for (int s = 0; s < aeSamplesSize; s++)
+			ae.setVisibleInput(s, fftArray[s].real());
+
+		ae.activate(sparsity);
 
 		ae.reconstruct();
+
+		for (int s = 0; s < aeSamplesSize; s++)
+			fftArray[s] = Complex(compress(ae.getVisibleRecon(s)));
+
+		//ifft(fftArray);
 
 		// Create features pointer
 		FeaturesPointer fp;
@@ -174,7 +190,7 @@ int main() {
 
 		for (int s = 0; s < aeSamplesSize; s++) {
 			float intensity = 1.0f;// std::max(0.0, 1.0 - std::abs(0.5 * aeSamplesSize - s) * sampleRangeInv);
-			reconSamplesf[i + s] += ae.getVisibleRecon(s) * intensity;
+			reconSamplesf[i + s] += fftArray[s].real() * intensity;
 			convCounts[i + s] += intensity;
 		}
 	}
@@ -218,9 +234,9 @@ int main() {
 	std::cout << "Sound reconstructed." << std::endl;
 	std::cout << "Training on sound..." << std::endl;
 
-	sc::HTSL ht;
+	sdr::PredictiveRSDR ht;
 
-	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
+	std::vector<sdr::PredictiveRSDR::LayerDesc> layerDescs(3);
 
 	layerDescs[0]._width = 16;
 	layerDescs[0]._height = 16;
@@ -231,11 +247,11 @@ int main() {
 	layerDescs[2]._width = 8;
 	layerDescs[2]._height = 8;
 
-	ht.createRandom(7, 7, layerDescs, generator);
+	ht.createRandom(dimH, dimH, layerDescs, -0.001f, 0.001f, 0.01f, 0.1f, 0.0f, generator);
 
 	int featuresCount = static_cast<int>(std::floor(buffer.getSampleCount() / static_cast<float>(trainStride)));
 
-	for (int t = 0; t < 20; t++) {
+	for (int t = 0; t < 5; t++) {
 		for (int s = 0; s < featuresCount; s++) {
 			// Extract features
 			int start = s * trainStride;
@@ -249,17 +265,13 @@ int main() {
 					ae.setVisibleInput(i, 0.0f);
 			}
 
-			ae.activate();
+			ae.activate(sparsity);
 
 			// Run on extracted features
 			for (int f = 0; f < aeFeatures; f++)
-				ht.setInput(f, ae.getHiddenActivation(f));
+				ht.setInput(f, ae.getHiddenState(f));
 
-			ht.update();
-
-			ht.learn();
-
-			ht.stepEnd();
+			ht.simStep();
 		}
 
 		std::cout << "Pass " << t << std::endl;
@@ -268,7 +280,7 @@ int main() {
 	std::cout << "Generating extra..." << std::endl;
 
 	// Extend song
-	int extraFeatures = 4000;
+	int extraFeatures = 2000;
 
 	std::vector<float> extraSamplesf((extraFeatures + 1) * trainStride, 0.0f);
 	std::vector<float> extraSamplesSums((extraFeatures + 1) * trainStride, 0.0f);
@@ -289,10 +301,10 @@ int main() {
 					ae.setVisibleInput(i, 0.0f);
 			}
 
-			ae.activate();
+			ae.activate(sparsity);
 
 			for (int f = 0; f < aeFeatures; f++)
-				ht.setInput(f, ae.getHiddenActivation(f));
+				ht.setInput(f, ae.getHiddenState(f));
 		}
 		else {
 			// Run on extracted features
@@ -300,9 +312,7 @@ int main() {
 				ht.setInput(f, ht.getPrediction(f));
 		}
 
-		ht.update();
-
-		ht.stepEnd();
+		ht.simStep(false);
 
 		std::vector<float> pred(aeFeatures);
 
@@ -312,7 +322,7 @@ int main() {
 #if RECONSTRUCT_DIRECT
 		std::vector<float> reconstruction(trainStride);
 
-		ae.reconstruct(pred, reconstruction);
+		ae.reconstructFeedForward(pred, reconstruction);
 
 		int start = s * trainStride;
 

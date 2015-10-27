@@ -8,9 +8,8 @@
 
 using namespace sdr;
 
-void RSDR::createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, float initMinInhibition, float initMaxInhibition, float initThreshold, std::mt19937 &generator) {
+void RSDR::createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, float initThreshold, std::mt19937 &generator) {
 	std::uniform_real_distribution<float> weightDist(initMinWeight, initMaxWeight);
-	std::uniform_real_distribution<float> inhibitionDist(initMinInhibition, initMaxInhibition);
 
 	_visibleWidth = visibleWidth;
 	_visibleHeight = visibleHeight;

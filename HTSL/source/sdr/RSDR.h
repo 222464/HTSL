@@ -55,7 +55,7 @@ namespace sdr {
 			return 1.0f / (1.0f + std::exp(-x));
 		}
 
-		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, float initMinInhibition, float initMaxInhibition, float initThreshold, std::mt19937 &generator);
+		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int inhibitionRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, float initThreshold, std::mt19937 &generator);
 
 		void activate(float sparsity);
 		void inhibit(float sparsity, const std::vector<float> &activations, std::vector<float> &states);
