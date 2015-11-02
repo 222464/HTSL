@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RSDR.h"
+#include "IRSDR.h"
 
 namespace sdr {
-	class PredictiveRSDR {
+	class IPredictiveRSDR {
 	public:
 		struct Connection {
 			unsigned short _index;
@@ -14,30 +14,32 @@ namespace sdr {
 		struct LayerDesc {
 			int _width, _height;
 
-			int _receptiveRadius, _recurrentRadius, _lateralRadius, _predictiveRadius, _feedBackRadius;
+			int _receptiveRadius, _recurrentRadius, _predictiveRadius, _feedBackRadius;
 
-			float _learnFeedForward, _learnRecurrent, _learnLateral, _learnThreshold;
+			float _learnFeedForward, _learnRecurrent;
 
 			float _learnFeedBack, _learnPrediction;
 
-			int _subIterSettle;
-			int _subIterMeasure;
-			float _leak;
+			int _sdrIter;
+			float _sdrStepSize;
+			float _sdrLambda;
+			float _sdrHiddenDecay;
+			float _sdrWeightDecay;
+			float _sdrBoostSparsity;
+			float _sdrLearnBoost;
 
 			float _averageSurpriseDecay;
 			float _attentionFactor;
 
-			float _sparsity;
-
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(8), _recurrentRadius(4), _lateralRadius(3), _predictiveRadius(4), _feedBackRadius(8),
-				_learnFeedForward(0.02f), _learnRecurrent(0.02f), _learnLateral(0.2f), _learnThreshold(0.12f),
+				_receptiveRadius(8), _recurrentRadius(6), _predictiveRadius(6), _feedBackRadius(8),
+				_learnFeedForward(0.05f), _learnRecurrent(0.05f),
 				_learnFeedBack(0.05f), _learnPrediction(0.05f),
-				_subIterSettle(17), _subIterMeasure(5), _leak(0.1f),
+				_sdrIter(30), _sdrStepSize(0.05f), _sdrLambda(0.4f), _sdrHiddenDecay(0.01f), _sdrWeightDecay(0.0001f),
+				_sdrBoostSparsity(0.02f), _sdrLearnBoost(0.05f),
 				_averageSurpriseDecay(0.01f),
-				_attentionFactor(4.0f),
-				_sparsity(0.02f)
+				_attentionFactor(2.0f)
 			{}
 		};
 
@@ -61,7 +63,7 @@ namespace sdr {
 		};
 
 		struct Layer {
-			RSDR _sdr;
+			IRSDR _sdr;
 
 			std::vector<PredictionNode> _predictionNodes;
 		};
@@ -69,15 +71,22 @@ namespace sdr {
 		static float sigmoid(float x) {
 			return 1.0f / (1.0f + std::exp(-x));
 		}
-	
+
 	private:
 		std::vector<LayerDesc> _layerDescs;
 		std::vector<Layer> _layers;
 
-		std::vector<float> _prediction;
+		std::vector<PredictionNode> _inputPredictionNodes;
+
 
 	public:
-		void createRandom(int inputWidth, int inputHeight, const std::vector<LayerDesc> &layerDescs, float initMinWeight, float initMaxWeight, float initThreshold, std::mt19937 &generator);
+		float _learnInputFeedBack;
+
+		IPredictiveRSDR()
+			: _learnInputFeedBack(0.05f)
+		{}
+
+		void createRandom(int inputWidth, int inputHeight, int inputFeedBackRadius, const std::vector<LayerDesc> &layerDescs, float initMinWeight, float initMaxWeight, float initThreshold, std::mt19937 &generator);
 
 		void simStep(bool learn = true);
 
@@ -86,11 +95,11 @@ namespace sdr {
 		}
 
 		void setInput(int x, int y, float value) {
-			setInput(x + y * _layers.front()._sdr.getVisibleWidth(), value);
+			setInput(x, y, value);
 		}
 
 		float getPrediction(int index) const {
-			return _prediction[index];
+			return _inputPredictionNodes[index]._state;
 		}
 
 		float getPrediction(int x, int y) const {

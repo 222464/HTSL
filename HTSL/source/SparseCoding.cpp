@@ -103,9 +103,9 @@ int main() {
 			for (int i = 0; i < inputf.size(); i++)
 				sparseCoder.setVisibleState(i, inputf[i]);
 
-			sparseCoder.activate(30, 0.05f, 0.6f, 0.1f, 0.01f, 1.0f, generator);
+			sparseCoder.activate(30, 0.05f, 0.6f, 0.0f);
 
-			sparseCoder.learn(0.02f, 0.02f, 0.0f);
+			sparseCoder.learn(0.02f, 0.02f, 0.02f, 0.02f, 0.0f);
 
 			sparseCoder.stepEnd();
 		}
@@ -130,7 +130,7 @@ int main() {
 					for (int i = 0; i < inputf.size(); i++)
 						sparseCoder.setVisibleState(i, inputf[i]);
 
-					sparseCoder.activate(30, 0.05f, 0.6f, 0.0001f, 0.01f, 1.0f, generator);
+					sparseCoder.activate(30, 0.05f, 0.6f, 0.0f);
 
 					sparseCoder.stepEnd();
 

@@ -15,7 +15,7 @@
 #ifndef __USE_PREDICTIVE_RSDR____
 #include <sc/HTSL.h>
 #else
-#include <sdr/PredictiveRSDR.h>
+#include <sdr/IPredictiveRSDR.h>
 #endif
 
 //#define _USE_ECG_DATA
@@ -40,24 +40,24 @@ int main()
 #ifndef __USE_PREDICTIVE_RSDR____
 	sc::HTSL htsl;
 #else
-	sdr::PredictiveRSDR pRSDR;
+	sdr::IPredictiveRSDR pRSDR;
 #endif
 
 #ifndef __USE_PREDICTIVE_RSDR____
 	std::vector<sc::HTSL::LayerDesc> layerDescs(3);
 #else
-	std::vector<sdr::PredictiveRSDR::LayerDesc> layerDescs(3);
+	std::vector<sdr::IPredictiveRSDR::LayerDesc> layerDescs(3);
 #endif
 	// lowest layer (connected to sensor)
-	layerDescs[0]._width  = 32;		// hidden layer width
-	layerDescs[0]._height = 32;		// hidden layer height
+	layerDescs[0]._width  = 8;		// hidden layer width
+	layerDescs[0]._height = 8;		// hidden layer height
 
-	layerDescs[1]._width  = 16;
-	layerDescs[1]._height = 16;
+	layerDescs[1]._width  = 6;
+	layerDescs[1]._height = 6;
 
 	// highest level
-	layerDescs[2]._width  = 8;
-	layerDescs[2]._height = 8;
+	layerDescs[2]._width  = 4;
+	layerDescs[2]._height = 4;
 	
 	// the input images is color, that is why, we need frameWidth * 3
 	//                visible_width,  visible_height, 
@@ -69,7 +69,7 @@ int main()
 	float initMaxWeight = +0.001f;
 	float initMinInhibition = 0.001f;
 	float initMaxInhibition = 0.005f;
-	pRSDR.createRandom(1, 1, layerDescs, initMinWeight, initMaxWeight, initMinInhibition, initMaxInhibition, 0.1f, generator);
+	pRSDR.createRandom(1, 1, 16, layerDescs, initMinWeight, initMaxWeight, 0.0f, generator);
 #endif
 	vis::Plot plot;
 	plot._curves.resize(2);
@@ -130,7 +130,7 @@ int main()
 			// z - index of PQRSTU: P=1, Q=2, R= 3, S=4, T=5, U=6
 			float value = y*4;	// without amplifying the amplitude, it is very difficult to make a sequence pattern QRST
 #else
-			float value = anomalyOffset + anomalyAmpl*std::sin(0.125f * 3.141596f * index * anomalyFreq + anomalyPhase);// +0.5f * std::sin(0.3f * 3.141596f * index * anomalyFreq + anomalyPhase);
+			float value = anomalyOffset + anomalyAmpl*std::sin(0.125f * 3.141596f * index * anomalyFreq + anomalyPhase) +0.5f * std::sin(0.3f * 3.141596f * index * anomalyFreq + anomalyPhase);
 #endif
 
 #ifndef __USE_PREDICTIVE_RSDR____
