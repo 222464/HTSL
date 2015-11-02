@@ -31,9 +31,9 @@ namespace sdr {
 
 			LayerDesc()
 				: _width(16), _height(16),
-				_receptiveRadius(9), _recurrentRadius(6), _lateralRadius(6), _predictiveRadius(7), _feedBackRadius(8),
-				_learnFeedForward(0.02f), _learnRecurrent(0.02f), _learnLateral(0.2f), _learnThreshold(0.05f),
-				_learnFeedBack(0.01f), _learnPrediction(0.01f),
+				_receptiveRadius(8), _recurrentRadius(4), _lateralRadius(3), _predictiveRadius(4), _feedBackRadius(8),
+				_learnFeedForward(0.02f), _learnRecurrent(0.02f), _learnLateral(0.2f), _learnThreshold(0.12f),
+				_learnFeedBack(0.05f), _learnPrediction(0.05f),
 				_subIterSettle(17), _subIterMeasure(5), _leak(0.1f),
 				_averageSurpriseDecay(0.01f),
 				_attentionFactor(4.0f),
@@ -82,7 +82,7 @@ namespace sdr {
 		void simStep(bool learn = true);
 
 		void setInput(int index, float value) {
-			_layers.front()._sdr.setVisibleInput(index, value);
+			_layers.front()._sdr.setVisibleState(index, value);
 		}
 
 		void setInput(int x, int y, float value) {

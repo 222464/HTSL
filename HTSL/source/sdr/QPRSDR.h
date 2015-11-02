@@ -2,6 +2,8 @@
 
 #include "PredictiveRSDR.h"
 
+#include <algorithm>
+
 namespace sdr {
 	class QPRSDR {
 	public:
@@ -19,6 +21,8 @@ namespace sdr {
 		struct QFunctionNode {
 			float _state;
 			float _error;
+
+			Connection _bias;
 			
 			std::vector<Connection> _feedForwardConnections;
 
@@ -29,6 +33,8 @@ namespace sdr {
 
 		struct QFunctionLayer {
 			std::vector<QFunctionNode> _qFunctionNodes;
+
+			std::vector<Connection> _qConnections;
 		};
 
 		struct ActionNode {
@@ -56,17 +62,19 @@ namespace sdr {
 		std::vector<ActionNode> _actionNodes;
 		std::vector<int> _actionNodeIndices;
 
-		std::vector<Connection> _qConnections;
-
 		float _prevValue;
 
 	public:
+		static float sigmoid(float x) {
+			return 1.0f / (1.0f + std::exp(-x));
+		}
+
 		static float relu(float x, float leak) {
-			return x > 0.0f ? x : x * leak;
+			return 1.0f + (x > 0.0f && x < 1.0f ? x : leak * x);
 		}
 
 		static float relud(float x, float leak) {
-			return x > 0.0f ? 1.0f : leak;
+			return x > 0.0f && x < 1.0f ? 1.0f : leak;
 		}
 
 		float _qAlpha;
@@ -82,8 +90,8 @@ namespace sdr {
 		float _gammaLambda;
 
 		QPRSDR()
-			: _qAlpha(0.005f),
-			_actionAlpha(0.01f),
+			: _qAlpha(0.1f),
+			_actionAlpha(0.1f),
 			_actionDeriveIterations(32),
 			_actionDeriveAlpha(0.05f),
 			_reluLeak(0.01f),
@@ -97,5 +105,24 @@ namespace sdr {
 
 		void simStep(float reward, std::mt19937 &generator, bool learn = true);
 
+		void setState(int index, float state) {
+			_prsdr.setInput(index, state);
+		}
+
+		void setState(int x, int y, float state) {
+			_prsdr.setInput(x, y, state);
+		}
+
+		float getAction(int index) const {
+			return _actionNodes[_actionNodeIndices[index]]._exploratoryAction;
+		}
+
+		float getAction(int x, int y) const {
+			return _actionNodes[_actionNodeIndices[x + y * _prsdr.getLayers().front()._sdr.getVisibleWidth()]]._exploratoryAction;
+		}
+
+		float getActionRel(int index) const {
+			return _actionNodes[index]._exploratoryAction;
+		}
 	};
 }

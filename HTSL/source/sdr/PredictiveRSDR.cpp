@@ -19,7 +19,7 @@ void PredictiveRSDR::createRandom(int inputWidth, int inputHeight, const std::ve
 	int heightPrev = inputHeight;
 
 	for (int l = 0; l < _layerDescs.size(); l++) {
-		_layers[l]._sdr.createRandom(widthPrev, heightPrev, _layerDescs[l]._width, _layerDescs[l]._height, _layerDescs[l]._receptiveRadius, _layerDescs[l]._lateralRadius, _layerDescs[l]._recurrentRadius, initMinWeight, initMaxWeight, initThreshold, generator);
+		//_layers[l]._sdr.createRandom(widthPrev, heightPrev, _layerDescs[l]._width, _layerDescs[l]._height, _layerDescs[l]._receptiveRadius, _layerDescs[l]._lateralRadius, _layerDescs[l]._recurrentRadius, initMinWeight, initMaxWeight, initThreshold, generator);
 
 		_layers[l]._predictionNodes.resize(_layerDescs[l]._width * _layerDescs[l]._height);
 
@@ -100,14 +100,14 @@ void PredictiveRSDR::createRandom(int inputWidth, int inputHeight, const std::ve
 void PredictiveRSDR::simStep(bool learn) {
 	// Feature extraction
 	for (int l = 0; l < _layers.size(); l++) {
-		_layers[l]._sdr.activate(_layerDescs[l]._sparsity);
+		//_layers[l]._sdr.activate(_layerDescs[l]._sparsity);
 
-		_layers[l]._sdr.reconstruct();
+		//_layers[l]._sdr.reconstruct();
 
 		// Set inputs for next layer if there is one
 		if (l < _layers.size() - 1) {
 			for (int i = 0; i < _layers[l]._sdr.getNumHidden(); i++)
-				_layers[l + 1]._sdr.setVisibleInput(i, _layers[l]._sdr.getHiddenState(i));
+				_layers[l + 1]._sdr.setVisibleState(i, _layers[l]._sdr.getHiddenState(i));
 		}
 	}
 
@@ -161,7 +161,7 @@ void PredictiveRSDR::simStep(bool learn) {
 		}
 
 		// Inhibit to find state
-		_layers[l]._sdr.inhibit(_layerDescs[l]._sparsity, predictionActivations, predictionStates);
+		//_layers[l]._sdr.inhibit(_layerDescs[l]._sparsity, predictionActivations, predictionStates);
 
 		for (int pi = 0; pi < _layers[l]._predictionNodes.size(); pi++) {
 			PredictionNode &p = _layers[l]._predictionNodes[pi];
@@ -190,5 +190,5 @@ void PredictiveRSDR::simStep(bool learn) {
 	for (int pi = 0; pi < _layers.front()._predictionNodes.size(); pi++)
 		firstLayerPrediction[pi] = _layers.front()._predictionNodes[pi]._state;
 
-	_layers.front()._sdr.reconstructFeedForward(firstLayerPrediction, _prediction);
+	//_layers.front()._sdr.reconstructFeedForward(firstLayerPrediction, _prediction);
 }

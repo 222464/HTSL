@@ -110,36 +110,38 @@ void RecurrentSparseCoder2D::createRandom(int visibleWidth, int visibleHeight, i
 			_hidden[hi]._hiddenHiddenConnections[ci]._weight *= normFactor;
 
 		// Recurrent
-		_hidden[hi]._hiddenPrevHiddenConnections.reserve(recurrentSize);
+		if (recurrentRadius != -1) {
+			_hidden[hi]._hiddenPrevHiddenConnections.reserve(recurrentSize);
 
-		dist2 = 0.0f;
+			dist2 = 0.0f;
 
-		for (int dx = -recurrentRadius; dx <= recurrentRadius; dx++)
-			for (int dy = -recurrentRadius; dy <= recurrentRadius; dy++) {
-				int hox = hx + dx;
-				int hoy = hy + dy;
+			for (int dx = -recurrentRadius; dx <= recurrentRadius; dx++)
+				for (int dy = -recurrentRadius; dy <= recurrentRadius; dy++) {
+					int hox = hx + dx;
+					int hoy = hy + dy;
 
-				if (hox >= 0 && hox < hiddenWidth && hoy >= 0 && hoy < hiddenHeight) {
-					int hio = hox + hoy * hiddenWidth;
+					if (hox >= 0 && hox < hiddenWidth && hoy >= 0 && hoy < hiddenHeight) {
+						int hio = hox + hoy * hiddenWidth;
 
-					VisibleConnection c;
+						VisibleConnection c;
 
-					c._weight = weightDist(generator);
-					c._index = hio;
-					c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(recurrentRadius + 1));
+						c._weight = weightDist(generator);
+						c._index = hio;
+						c._falloff = std::max(0.0f, 1.0f - std::sqrt(static_cast<float>(dx * dx + dy * dy)) / static_cast<float>(recurrentRadius + 1));
 
-					dist2 += c._weight * c._weight;
+						dist2 += c._weight * c._weight;
 
-					_hidden[hi]._hiddenPrevHiddenConnections.push_back(c);
+						_hidden[hi]._hiddenPrevHiddenConnections.push_back(c);
+					}
 				}
-			}
 
-		_hidden[hi]._hiddenPrevHiddenConnections.shrink_to_fit();
+			_hidden[hi]._hiddenPrevHiddenConnections.shrink_to_fit();
 
-		normFactor = 1.0f / std::sqrt(dist2);
+			normFactor = 1.0f / std::sqrt(dist2);
 
-		for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
-			_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight *= normFactor;
+			for (int ci = 0; ci < _hidden[hi]._hiddenPrevHiddenConnections.size(); ci++)
+				_hidden[hi]._hiddenPrevHiddenConnections[ci]._weight *= normFactor;
+		}
 	}
 }
 

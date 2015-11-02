@@ -7,15 +7,15 @@
 
 #include <iostream>
 
-#include "sc/RecurrentSparseCoder2D.h"
+#include "sdr/IRSDR.h"
 
 int main() {
 	std::mt19937 generator(time(nullptr));
 
 	// ---------------------------- Simulation Parameters ----------------------------
 
-	const int sampleWidth = 32;
-	const int sampleHeight = 32;
+	const int sampleWidth = 16;
+	const int sampleHeight = 16;
 	const int codeWidth = 16;
 	const int codeHeight = 16;
 	const int istaIter = 30;
@@ -24,13 +24,13 @@ int main() {
 
 	float sparsity = 1.0f;
 
-	const int stepsPerFrame = 1;
+	const int stepsPerFrame = 20;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
-	sc::RecurrentSparseCoder2D sparseCoder;
+	sdr::IRSDR sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, 5, 0.5f, 0.0f, 10.02f, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, -1, -0.1f, 0.1f, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -101,11 +101,13 @@ int main() {
 				}
 
 			for (int i = 0; i < inputf.size(); i++)
-				sparseCoder.setVisibleInput(i, inputf[i]);
+				sparseCoder.setVisibleState(i, inputf[i]);
 
-			sparseCoder.activate(istaIter, istaStepSize);
+			sparseCoder.activate(30, 0.05f, 0.6f, 0.1f, 0.01f, 1.0f, generator);
 
-			sparseCoder.learn(0.01f, 0.5f, 0.1f, 0.1f);
+			sparseCoder.learn(0.02f, 0.02f, 0.0f);
+
+			sparseCoder.stepEnd();
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
@@ -113,8 +115,8 @@ int main() {
 			std::vector<float> recon(sampleImage.getSize().x * sampleImage.getSize().y, 0.0f);
 			std::vector<float> sums(sampleImage.getSize().x * sampleImage.getSize().y, 0.0f);
 
-			for (int wx = 0; wx < sampleImage.getSize().x - sampleWidth; wx += 2)
-				for (int wy = 0; wy < sampleImage.getSize().y - sampleHeight; wy += 2) {
+			for (int wx = 0; wx < sampleImage.getSize().x - sampleWidth; wx += 4)
+				for (int wy = 0; wy < sampleImage.getSize().y - sampleHeight; wy += 4) {
 					std::vector<float> inputf(sampleWidth * sampleHeight);
 
 					for (int x = 0; x < sampleWidth; x++)
@@ -126,15 +128,9 @@ int main() {
 						}
 
 					for (int i = 0; i < inputf.size(); i++)
-						sparseCoder.setVisibleInput(i, inputf[i]);
+						sparseCoder.setVisibleState(i, inputf[i]);
 
-					sparseCoder.activate(istaIter, istaStepSize);
-
-					std::vector<float> rv;
-
-					sparseCoder.reconstruct(rv);
-
-					sparseCoder.denorm(rv);
+					sparseCoder.activate(30, 0.05f, 0.6f, 0.0001f, 0.01f, 1.0f, generator);
 
 					sparseCoder.stepEnd();
 
@@ -143,7 +139,7 @@ int main() {
 							int tx = wx + x;
 							int ty = wy + y;
 
-							recon[tx + ty * sampleImage.getSize().x] += rv[x + y * sampleWidth];
+							recon[tx + ty * sampleImage.getSize().x] += sparseCoder.getVisibleRecon(x, y);
 							sums[tx + ty * sampleImage.getSize().x] += 1.0f;
 						}
 				}
@@ -179,6 +175,9 @@ int main() {
 		float minWeight = 9999.0f;
 		float maxWeight = -9999.0f;
 
+		float averageWeight = 0.0f;
+		float count = 0.0f;
+
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
 				std::vector<float> rectangle;
@@ -189,6 +188,9 @@ int main() {
 
 					minWeight = std::min(minWeight, w);
 					maxWeight = std::max(maxWeight, w);
+
+					averageWeight += w;
+					count++;
 				}
 			}
 
@@ -199,6 +201,8 @@ int main() {
 
 		float scalar = 1.0f / (maxWeight - minWeight);
 
+		averageWeight /= count;
+
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
 				std::vector<float> rectangle;
@@ -208,7 +212,7 @@ int main() {
 					for (int y = 0; y < (2 * sparseCoder.getReceptiveRadius() + 1); y++) {
 						sf::Color color;
 
-						color.r = color.b = color.g = 255 * scalar * (rectangle[x + dim * y] - minWeight);
+						color.r = color.b = color.g = 255 * sdr::IRSDR::sigmoid(5.0f * (rectangle[x + dim * y] - averageWeight));
 						color.a = 255;
 
 						receptiveFieldsImage.setPixel(sx * dim + x, sy * dim + y, color);
@@ -229,7 +233,7 @@ int main() {
 
 		for (int sx = 0; sx < codeWidth; sx++)
 			for (int sy = 0; sy < codeHeight; sy++) {
-				if (sparseCoder.getHiddenSpikes(sx + sy * codeWidth) > 0.0f) {
+				if (sparseCoder.getHiddenState(sx + sy * codeWidth) != 0.0f) {
 					sf::RectangleShape rs;
 
 					rs.setPosition(sx * dim * scale, sy * dim * scale);
@@ -250,7 +254,7 @@ int main() {
 
 		sampleSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - sampleImage.getSize().x, 0.0f));
 
-		sampleSprite.setScale(0.125f, 0.125f);
+		sampleSprite.setScale(0.5f, 0.5f);
 
 		renderWindow.draw(sampleSprite);
 
@@ -259,7 +263,7 @@ int main() {
 
 		reconstructionSprite.setPosition(sf::Vector2f(renderWindow.getSize().x - reconstructionImage.getSize().x * 4.0f, renderWindow.getSize().y - reconstructionImage.getSize().y * 4.0f));
 
-		reconstructionSprite.setScale(4.0f, 4.0f);
+		reconstructionSprite.setScale(2.0f, 2.0f);
 
 		renderWindow.draw(reconstructionSprite);
 
