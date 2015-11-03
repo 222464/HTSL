@@ -27,6 +27,7 @@ namespace sdr {
 			float _sdrWeightDecay;
 			float _sdrBoostSparsity;
 			float _sdrLearnBoost;
+			float _sdrNoise;
 
 			float _averageSurpriseDecay;
 			float _attentionFactor;
@@ -37,7 +38,7 @@ namespace sdr {
 				_learnFeedForward(0.05f), _learnRecurrent(0.05f),
 				_learnFeedBack(0.05f), _learnPrediction(0.05f),
 				_sdrIter(30), _sdrStepSize(0.05f), _sdrLambda(0.4f), _sdrHiddenDecay(0.01f), _sdrWeightDecay(0.0001f),
-				_sdrBoostSparsity(0.02f), _sdrLearnBoost(0.05f),
+				_sdrBoostSparsity(0.02f), _sdrLearnBoost(0.05f), _sdrNoise(0.01f),
 				_averageSurpriseDecay(0.01f),
 				_attentionFactor(2.0f)
 			{}
@@ -88,14 +89,14 @@ namespace sdr {
 
 		void createRandom(int inputWidth, int inputHeight, int inputFeedBackRadius, const std::vector<LayerDesc> &layerDescs, float initMinWeight, float initMaxWeight, float initThreshold, std::mt19937 &generator);
 
-		void simStep(bool learn = true);
+		void simStep(std::mt19937 &generator, bool learn = true);
 
 		void setInput(int index, float value) {
 			_layers.front()._sdr.setVisibleState(index, value);
 		}
 
 		void setInput(int x, int y, float value) {
-			setInput(x, y, value);
+			setInput(x + y * _layerDescs.front()._width, value);
 		}
 
 		float getPrediction(int index) const {

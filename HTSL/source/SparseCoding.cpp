@@ -14,23 +14,23 @@ int main() {
 
 	// ---------------------------- Simulation Parameters ----------------------------
 
-	const int sampleWidth = 16;
-	const int sampleHeight = 16;
+	const int sampleWidth = 32;
+	const int sampleHeight = 32;
 	const int codeWidth = 16;
 	const int codeHeight = 16;
 	const int istaIter = 30;
-	const float istaStepSize = 0.2f;
+	const float istaStepSize = 0.01f;
 	const float sparsityDecay = 0.1f;
 
 	float sparsity = 1.0f;
 
-	const int stepsPerFrame = 20;
+	const int stepsPerFrame = 10;
 
 	// --------------------------- Create the Sparse Coder ---------------------------
 
 	sdr::IRSDR sparseCoder;
 
-	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 8, -1, -0.1f, 0.1f, generator);
+	sparseCoder.createRandom(sampleWidth, sampleHeight, codeWidth, codeHeight, 12, -1, -0.1f, 0.1f, generator);
 
 	// ------------------------------- Load Resources --------------------------------
 
@@ -59,6 +59,8 @@ int main() {
 
 	std::uniform_int_distribution<int> widthDist(0, static_cast<int>(sampleImage.getSize().x) - sampleWidth - 1);
 	std::uniform_int_distribution<int> heightDist(0, static_cast<int>(sampleImage.getSize().y) - sampleHeight - 1);
+
+	std::normal_distribution<float> noiseDist(0.0f, 0.01f);
 
 	float dt = 0.017f;
 
@@ -97,15 +99,15 @@ int main() {
 					int tx = sampleX + x;
 					int ty = sampleY + y;
 
-					inputf[x + y * sampleWidth] = sampleImage.getPixel(tx, ty).r / 255.0f;
+					inputf[x + y * sampleWidth] = sampleImage.getPixel(tx, ty).r / 255.0f + noiseDist(generator);
 				}
 
 			for (int i = 0; i < inputf.size(); i++)
 				sparseCoder.setVisibleState(i, inputf[i]);
 
-			sparseCoder.activate(30, 0.05f, 0.6f, 0.0f);
+			sparseCoder.activate(30, 0.05f, 0.05f, 0.01f, 0.05f, generator);
 
-			sparseCoder.learn(0.02f, 0.02f, 0.02f, 0.02f, 0.0f);
+			sparseCoder.learn(0.1f, 0.1f, 0.01f, 0.1f, 0.0f, 0.1f);
 
 			sparseCoder.stepEnd();
 		}
@@ -130,7 +132,7 @@ int main() {
 					for (int i = 0; i < inputf.size(); i++)
 						sparseCoder.setVisibleState(i, inputf[i]);
 
-					sparseCoder.activate(30, 0.05f, 0.6f, 0.0f);
+					sparseCoder.activate(30, 0.05f, 0.05f, 0.01f, 0.05f, generator);
 
 					sparseCoder.stepEnd();
 
@@ -200,6 +202,8 @@ int main() {
 		receptiveFieldsImage.create(codeWidth * dim, codeHeight * dim);
 
 		float scalar = 1.0f / (maxWeight - minWeight);
+
+		std::cout << "MW: " << minWeight << " " << maxWeight << std::endl;
 
 		averageWeight /= count;
 

@@ -47,6 +47,8 @@ namespace sdr {
 		std::vector<VisibleNode> _visible;
 		std::vector<HiddenNode> _hidden;
 
+		void pL(const std::vector<float> &states, float stepSize, float lambda, float hiddenDecay);
+
 	public:
 		static float sigmoid(float x) {
 			return 1.0f / (1.0f + std::exp(-x));
@@ -54,11 +56,11 @@ namespace sdr {
 
 		void createRandom(int visibleWidth, int visibleHeight, int hiddenWidth, int hiddenHeight, int receptiveRadius, int recurrentRadius, float initMinWeight, float initMaxWeight, std::mt19937 &generator);
 
-		void activate(int iter, float stepSize, float lambda, float hiddenDecay);
+		void activate(int iter, float stepSize, float lambda, float hiddenDecay, float noise, std::mt19937 &generator);
 		void reconstruct();
 		void reconstruct(const std::vector<float> &states, std::vector<float> &reconHidden, std::vector<float> &reconVisible);
 		void reconstructFeedForward(const std::vector<float> &states, std::vector<float> &recon);
-		void learn(float learnFeedForward, float learnRecurrent, float learnBoost, float boostSparsity, float weightDecay);
+		void learn(float learnFeedForward, float learnRecurrent, float learnBoost, float boostSparsity, float weightDecay, float maxWeightDelta = 0.5f);
 		//void learn(const std::vector<float> &attentions, float learnFeedForward, float learnRecurrent);
 		void stepEnd();
 

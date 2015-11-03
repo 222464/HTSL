@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-#include <sdr/PredictiveRSDR.h>
+#include <sdr/IPredictiveRSDR.h>
 
 class Animation {
 public:
@@ -153,9 +153,9 @@ int main() {
 	//Animation animation;
 	//animation.loadFromFile("resources/numberSequence.png");
 
-	sdr::PredictiveRSDR rsdr;
+	sdr::IPredictiveRSDR rsdr;
 
-	std::vector<sdr::PredictiveRSDR::LayerDesc> layerDescs(3);
+	std::vector<sdr::IPredictiveRSDR::LayerDesc> layerDescs(3);
 
 	layerDescs[0]._width = 32;
 	layerDescs[0]._height = 32;
@@ -166,7 +166,7 @@ int main() {
 	layerDescs[2]._width = 16;
 	layerDescs[2]._height = 16;
 
-	rsdr.createRandom(frameWidth * 3, frameHeight, layerDescs, -0.001f, 0.001f, 0.001f, 0.01f, 0.1f, generator);
+	rsdr.createRandom(frameWidth * 3, frameHeight, 16, layerDescs, -0.001f, 0.001f, 0.0f, generator);
 
 	// ------------------------------- Simulation Loop -------------------------------
 
@@ -213,7 +213,7 @@ int main() {
 					rsdr.setInput(x * 3 + 2, y, std::min(1.0f, std::max(0.0f, rsdr.getPrediction(x * 3 + 2, y))));
 				}
 
-			rsdr.simStep(false);
+			rsdr.simStep(generator);
 		}
 		else {
 			for (int x = 0; x < frameWidth; x++)
@@ -223,7 +223,7 @@ int main() {
 					rsdr.setInput(x * 3 + 2, y, std::min(1.0f, std::max(0.0f, subImage.getPixel(x, y).b / 255.0f)));
 				}
 
-			rsdr.simStep();
+			rsdr.simStep(generator);
 		}
 
 		change = !change;

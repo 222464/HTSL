@@ -142,7 +142,7 @@ int main()
 			float predV = htsl.getPrediction(0);
 #else
 			pRSDR.setInput(0, value);
-			pRSDR.simStep();
+			pRSDR.simStep(generator);
 			float predV = pRSDR.getPrediction(0);
 #endif
 			// plot target data

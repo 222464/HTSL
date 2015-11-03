@@ -135,10 +135,10 @@ void IPredictiveRSDR::createRandom(int inputWidth, int inputHeight, int inputFee
 	}
 }
 
-void IPredictiveRSDR::simStep(bool learn) {
+void IPredictiveRSDR::simStep(std::mt19937 &generator, bool learn) {
 	// Feature extraction
 	for (int l = 0; l < _layers.size(); l++) {
-		_layers[l]._sdr.activate(_layerDescs[l]._sdrIter, _layerDescs[l]._sdrStepSize, _layerDescs[l]._sdrLambda, _layerDescs[l]._sdrHiddenDecay);
+		_layers[l]._sdr.activate(_layerDescs[l]._sdrIter, _layerDescs[l]._sdrStepSize, _layerDescs[l]._sdrLambda, _layerDescs[l]._sdrHiddenDecay, _layerDescs[l]._sdrNoise, generator);
 
 		// Set inputs for next layer if there is one
 		if (l < _layers.size() - 1) {
